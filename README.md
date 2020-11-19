@@ -1,2 +1,2 @@
 # Mobil-Uygulama-Gelistirme
-mobil uygulama geliştirme projesi
+Mobil uygulama Geliştirme dersi için hazırladığım film/dizi değerlendirme uygulaması.
