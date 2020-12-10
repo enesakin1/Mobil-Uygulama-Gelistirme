@@ -1,4 +1,4 @@
-export default {
+const firebaseConfig = {
   apiKey: "AIzaSyClebvimYB5Kpr9m2Iyvyu6pPsQ4Xa8noU",
   authDomain: "needshortreview.firebaseapp.com",
   databaseURL:
@@ -8,3 +8,5 @@ export default {
   messagingSenderId: "60774605233",
   appId: "1:60774605233:web:72389de706fe661e979d90",
 };
+
+export default firebaseConfig;

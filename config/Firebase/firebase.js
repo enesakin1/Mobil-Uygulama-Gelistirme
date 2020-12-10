@@ -3,7 +3,11 @@ import "firebase/auth";
 import "firebase/firestore";
 import firebaseConfig from "./firebaseConfig";
 
-firebase.initializeApp(firebaseConfig);
+if (!firebase.apps.length) {
+  firebase.initializeApp(firebaseConfig);
+} else {
+  firebase.app();
+}
 
 const Firebase = {
   loginWithEmail: (email, password) => {
