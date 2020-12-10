@@ -21,8 +21,10 @@
     "react": "16.13.1",
     "react-dom": "16.13.1",
     "react-native": "https://github.com/expo/react-native/archive/sdk-39.0.4.tar.gz",
+    "react-native-elements": "^3.0.0-alpha.1",
     "react-native-extended-stylesheet": "^0.12.0",
     "react-native-gesture-handler": "^1.9.0",
+    "react-native-hide-with-keyboard": "^1.2.1",
     "react-native-keyboard-aware-scrollview": "^2.1.0",
     "react-native-web": "~0.13.12",
     "react-navigation": "^4.4.3",
@@ -31,5 +33,11 @@
   "devDependencies": {
     "@babel/core": "~7.9.0"
   },
+  "rnpm": {
+    "assets": [
+      "./assets/fonts/"
+    ]
+  },
   "private": true
 }
+

@@ -1,5 +1,5 @@
 import React from "react";
-import { ActivityIndicator, StyleSheet, View } from "react-native";
+import { ActivityIndicator, StyleSheet, View, Image } from "react-native";
 import { withFirebaseHOC } from "../config/Firebase";
 
 class Initial extends React.Component {
@@ -7,9 +7,9 @@ class Initial extends React.Component {
     try {
       await this.props.firebase.checkUserAuth((user) => {
         if (user) {
-          this.props.navigation.navigate("App");
+          this.props.navigation.navigate("Search");
         } else {
-          this.props.navigation.navigate("Auth");
+          this.props.navigation.navigate("Login");
         }
       });
     } catch (error) {
@@ -18,8 +18,12 @@ class Initial extends React.Component {
   };
   render() {
     return (
-      <View style={[styles.container, styles.horizontal]}>
-        <ActivityIndicator size="large" />
+      <View style={styles.container}>
+        <Image
+          source={require("../assets/logo.png")}
+          style={styles.logo}
+        ></Image>
+        <ActivityIndicator size="large" color="white" />
       </View>
     );
   }
@@ -29,11 +33,15 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: "center",
+    alignContent: "center",
+    backgroundColor: "orange",
   },
-  horizontal: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    padding: 10,
+  logo: {
+    alignSelf: "center",
+    resizeMode: "contain",
+    aspectRatio: 0.7,
+    justifyContent: "center",
+    borderRadius: 10,
   },
 });
 
