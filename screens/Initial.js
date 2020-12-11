@@ -7,9 +7,9 @@ class Initial extends React.Component {
     try {
       await this.props.firebase.checkUserAuth((user) => {
         if (user) {
-          this.props.navigation.navigate("Search");
+          this.props.navigation.navigate("App");
         } else {
-          this.props.navigation.navigate("Login");
+          this.props.navigation.navigate("Auth");
         }
       });
     } catch (error) {

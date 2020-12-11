@@ -51,7 +51,7 @@ class loginScreen extends React.Component {
       );
 
       if (response.user) {
-        this.props.navigation.navigate("Search");
+        this.props.navigation.navigate("App");
       }
     } catch (error) {
       alert("Seems like there is no account like that. Try something else.");

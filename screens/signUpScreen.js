@@ -1,13 +1,12 @@
-import { ErrorMessage, Formik } from "formik";
+import { Formik } from "formik";
 import * as Yup from "yup";
-import React, { Fragment, Component } from "react";
+import React, { Fragment} from "react";
 import { Ionicons } from "@expo/vector-icons";
 import {
   StyleSheet,
   SafeAreaView,
   View,
   TouchableOpacity,
-  Text,
   Dimensions,
   Image,
   ImageBackground,
