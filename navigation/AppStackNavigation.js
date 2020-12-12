@@ -1,7 +1,7 @@
 import React from "react";
 import { createStackNavigator } from "@react-navigation/stack";
-import Search from "../screens/searchScreen";
-import profileScreen from "../screens/profileScreen";
+import movieScreen from "../screens/movieScreen";
+import DrawerNavigator from "./AppDrawNavigation";
 
 const appStack = createStackNavigator();
 
@@ -12,21 +12,10 @@ const SearchStackNavigator = () => {
         headerShown: false,
       }}
     >
-      <appStack.Screen name="Search" component={Search} />
+      <appStack.Screen name="Drawer" component={DrawerNavigator} />
+      <appStack.Screen name="Movie" component={movieScreen} />
     </appStack.Navigator>
   );
 };
 
-const ProfileStackNavigator = () => {
-  return (
-    <appStack.Navigator
-      screenOptions={{
-        headerShown: false,
-      }}
-    >
-      <appStack.Screen name="Profile" component={profileScreen} />
-    </appStack.Navigator>
-  );
-};
-
-export { SearchStackNavigator, ProfileStackNavigator };
+export default SearchStackNavigator;

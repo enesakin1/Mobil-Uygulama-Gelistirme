@@ -1,6 +1,6 @@
 import { Formik } from "formik";
 import * as Yup from "yup";
-import React, { Fragment} from "react";
+import React, { Fragment } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import {
   StyleSheet,
@@ -68,12 +68,7 @@ class signUpScreen extends React.Component {
     }
   };
   render() {
-    const {
-      passwordVisibility,
-      rightIcon,
-      alreadyExist,
-      alreadyError,
-    } = this.state;
+    const { passwordVisibility, rightIcon } = this.state;
     return (
       <ScrollView style={{ flex: 1 }}>
         <KeyboardAvoidingView style={{ flex: 1 }}>

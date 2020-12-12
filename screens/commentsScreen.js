@@ -21,4 +21,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default withFirebaseHOC(commentsScreen);
+export default commentsScreen;

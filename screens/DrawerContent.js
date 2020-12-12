@@ -13,7 +13,7 @@ function DrawerContent(props) {
           <View style={styles.userInfoSection}>
             <View style={{ flexDirection: "row", marginTop: 15 }}>
               <ImageBackground
-                source={require("../assets/logoBlue.png")}
+                source={require("../assets/logoWithout.png")}
                 style={styles.logo}
                 borderRadius={10}
               />

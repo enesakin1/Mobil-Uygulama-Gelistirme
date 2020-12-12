@@ -1,6 +1,7 @@
 import React from "react";
 import { ActivityIndicator, StyleSheet, View, Image } from "react-native";
 import { withFirebaseHOC } from "../config/Firebase";
+import LoadingScreen from "./loadingScreen";
 
 class Initial extends React.Component {
   componentDidMount = async () => {
@@ -17,32 +18,8 @@ class Initial extends React.Component {
     }
   };
   render() {
-    return (
-      <View style={styles.container}>
-        <Image
-          source={require("../assets/logo.png")}
-          style={styles.logo}
-        ></Image>
-        <ActivityIndicator size="large" color="white" />
-      </View>
-    );
+    return <LoadingScreen />;
   }
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: "center",
-    alignContent: "center",
-    backgroundColor: "orange",
-  },
-  logo: {
-    alignSelf: "center",
-    resizeMode: "contain",
-    aspectRatio: 0.7,
-    justifyContent: "center",
-    borderRadius: 10,
-  },
-});
 
 export default withFirebaseHOC(Initial);

@@ -1,2 +1,31 @@
 import React from "react";
-import { View } from "react-native";
+import { ActivityIndicator, View, Image, StyleSheet } from "react-native";
+import { withFirebaseHOC } from "../config/Firebase";
+
+export default function LoadingScreen() {
+  return (
+    <View style={styles.container}>
+      <Image
+        source={require("../assets/logoWithout.png")}
+        style={styles.logo}
+      ></Image>
+      <ActivityIndicator size="large" color="white" />
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    justifyContent: "center",
+    alignContent: "center",
+    backgroundColor: "orange",
+  },
+  logo: {
+    alignSelf: "center",
+    resizeMode: "contain",
+    aspectRatio: 0.7,
+    justifyContent: "center",
+    borderRadius: 10,
+  },
+});
