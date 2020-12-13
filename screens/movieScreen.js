@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { Dimensions } from "react-native";
 import { StyleSheet, Text, View, Image } from "react-native";
 import {
@@ -8,24 +8,46 @@ import {
 } from "@expo-google-fonts/inter";
 import LoadingScreen from "./loadingScreen";
 import { Oswald_600SemiBold } from "@expo-google-fonts/oswald";
+import { Button } from "react-native-elements";
+import { Ionicons } from "@expo/vector-icons";
+import { withFirebaseHOC } from "../config/Firebase";
 
 const { width, height } = Dimensions.get("window");
 
-function movieScreen({ route, navigation }) {
+function movieScreen({ route, navigation, firebase }) {
   let [fontsLoaded] = useFonts({
     Inter_600SemiBold,
     Inter_400Regular,
     Oswald_600SemiBold,
   });
+  const { selected, movieID } = route.params;
+  const showComments = async () => {
+    let cantWrite = false;
+    const user = await firebase.getUser();
+    const response = await firebase.checkComment(user, movieID);
+    const comments = await firebase.getAllComments(movieID);
+    if (response) {
+      cantWrite = true;
+    }
+    navigation.navigate("Comments", {
+      ID: movieID,
+      cantWrite: cantWrite,
+      userInfo: user,
+      comments: comments,
+    });
+  };
 
-  const { selected } = route.params;
   if (!fontsLoaded) {
     return <LoadingScreen />;
   } else {
     return (
       <View style={styles.container}>
         <View style={styles.topContainer}>
-          <Image source={{ uri: selected.Poster }} style={styles.image} />
+          <Image
+            source={{ uri: selected.Poster }}
+            style={styles.image}
+            blurRadius={0.5}
+          />
         </View>
         <View style={styles.bottomContainer}>
           <View style={styles.flexRow}>
@@ -52,6 +74,18 @@ function movieScreen({ route, navigation }) {
             <Text style={[styles.textWhite, styles.desc]} numberOfLines={6}>
               {selected.Plot}
             </Text>
+          </View>
+          <View style={styles.container}>
+            <Button
+              title="Comments"
+              titleStyle={[styles.imdb, { color: "black" }]}
+              buttonStyle={{
+                marginTop: 40,
+                width: "50%",
+              }}
+              icon={<Ionicons name="ios-chatboxes" size={24} color="#1a2538" />}
+              onPress={showComments}
+            />
           </View>
         </View>
       </View>
@@ -100,7 +134,7 @@ const styles = StyleSheet.create({
   },
   desc: { marginTop: 10, fontFamily: "Inter_400Regular" },
   title: {
-    fontSize: 48,
+    fontSize: 28,
     textTransform: "uppercase",
     lineHeight: 56,
     marginVertical: 20,
@@ -108,4 +142,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default movieScreen;
+export default withFirebaseHOC(movieScreen);

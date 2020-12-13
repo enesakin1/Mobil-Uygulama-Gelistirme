@@ -26,6 +26,7 @@ function searchScreen({ navigation }) {
       let result = data;
       navigation.navigate("Movie", {
         selected: result,
+        movieID: imdbID,
       });
     });
   };
@@ -50,7 +51,6 @@ function searchScreen({ navigation }) {
           <Image
             source={require("../assets/logoWithout.png")}
             style={styles.logo}
-            borderRadius={10}
           />
         </View>
         <View style={styles.searchBox}>
