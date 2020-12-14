@@ -1,19 +1,8 @@
-import React, { useState } from "react";
-import {
-  StyleSheet,
-  View,
-  Keyboard,
-  Image,
-  ImageBackground,
-  TouchableHighlight,
-  FlatList,
-  KeyboardAvoidingView,
-  Platform,
-} from "react-native";
+import React, { useState, useEffect } from "react";
+import { StyleSheet, View, ImageBackground, FlatList } from "react-native";
 import { withFirebaseHOC } from "../config/Firebase";
 import { Input, Text, Button } from "react-native-elements";
-import { Ionicons } from "@expo/vector-icons";
-import { BlurView } from "expo";
+import LoadingScreen from "./loadingScreen";
 
 const Item = ({ comment }) => (
   <View style={styles.item}>
@@ -21,22 +10,29 @@ const Item = ({ comment }) => (
   </View>
 );
 
-function commentsScreen({ route, navigation, firebase }) {
-  const { ID, cantWrite, comments } = route.params;
+function commentsScreen({ route, firebase }) {
+  const { ID, cantWrite, movieTitle } = route.params;
 
   const [state, setState] = useState({
     commentText: "",
     error: "",
     pressedSubmit: false,
+    comments: {},
   });
-
+  const showComments = async () => {
+    setState({ comments: await firebase.getAllComments(ID) });
+  };
+  useEffect(() => {
+    showComments();
+  }, []);
   const renderItem = ({ item }) => <Item comment={item.comment} />;
-
   const submitComment = async () => {
     const comment = state.commentText;
     if (comment.length < 40) {
-      setState(() => ({
+      setState((prevState) => ({
+        commentText: prevState.commentText,
         error: "Minimum 40 characters",
+        comments: prevState.comments,
       }));
       return;
     }
@@ -44,12 +40,29 @@ function commentsScreen({ route, navigation, firebase }) {
       error: "",
       pressedSubmit: true,
     }));
+    var date = new Date().getDate();
+    var month = new Date().getMonth() + 1;
+    var year = new Date().getFullYear();
+    var hours = new Date().getHours();
+    var min = new Date().getMinutes();
+    var sec = new Date().getSeconds();
+    let currentDate =
+      date + "/" + month + "/" + year + " " + hours + ":" + min + ":" + sec;
     try {
       const user = await firebase.getUser();
       if (user.uid) {
         const useruid = user.uid;
-        const userData = { comment, useruid, ID };
+        let commentid = "";
+        const userData = {
+          comment,
+          useruid,
+          ID,
+          currentDate,
+          movieTitle,
+          commentid,
+        };
         await firebase.createNewComment(userData);
+        showComments();
       }
     } catch (error) {
       console.log(error);
@@ -62,7 +75,7 @@ function commentsScreen({ route, navigation, firebase }) {
       <ImageBackground
         source={require("../assets/comment.jpg")}
         style={{ flex: 1, width: "100%" }}
-        blurRadius={2}
+        blurRadius={0.5}
       >
         <View style={styles.writeComment}>
           <Input
@@ -102,9 +115,10 @@ function commentsScreen({ route, navigation, firebase }) {
           />
         </View>
         <FlatList
-          data={comments}
+          data={state.comments}
           renderItem={renderItem}
           keyExtractor={(item) => item.useruid}
+          style={{ flex: 1 }}
         ></FlatList>
       </ImageBackground>
     </View>

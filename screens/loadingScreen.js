@@ -19,7 +19,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignContent: "center",
-    backgroundColor: "orange",
+    backgroundColor: "#5bb9eb",
   },
   logo: {
     alignSelf: "center",

@@ -1,5 +1,4 @@
 import React from "react";
-import { ActivityIndicator, StyleSheet, View, Image } from "react-native";
 import { withFirebaseHOC } from "../config/Firebase";
 import LoadingScreen from "./loadingScreen";
 

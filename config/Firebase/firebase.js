@@ -32,8 +32,89 @@ const Firebase = {
   getUser: () => {
     return firebase.auth().currentUser;
   },
-  createNewComment: (commentData) => {
-    return firebase.firestore().collection("comments").add(commentData);
+  setPhotoUploaded: async (useruid) => {
+    return await firebase
+      .firestore()
+      .collection("users")
+      .doc(useruid)
+      .update({ photouploaded: true });
+  },
+  uploadPhoto: async (uri, filename) => {
+    return new Promise(async (res, rej) => {
+      const response = await fetch(uri);
+      const file = await response.blob();
+
+      let upload = firebase.storage().ref(filename).put(file);
+
+      upload.on(
+        "state_changed",
+        (snapshot) => {},
+        (err) => {
+          rej(err);
+        },
+        async () => {
+          const url = await upload.snapshot.ref.getDownloadURL();
+          res(url);
+        }
+      );
+    });
+  },
+  getUsername: async (useruid) => {
+    const query = firebase.firestore().collection("users").doc(useruid);
+    try {
+      const querySnapshot = await query.get();
+      return querySnapshot.data().username;
+    } catch (e) {}
+  },
+  getPhoto: async (useruid) => {
+    const query = firebase.firestore().collection("users").doc(useruid);
+    const querySnapshot = await query.get();
+    if (querySnapshot.data().photouploaded) {
+      return await firebase
+        .storage()
+        .ref("avatars")
+        .child(useruid)
+        .getDownloadURL();
+    }
+  },
+  getUserComments: async (useruid) => {
+    let query = firebase
+      .firestore()
+      .collection("comments")
+      .where("useruid", "==", useruid);
+    try {
+      const results = [];
+      let querySnapshot = await query.get();
+      querySnapshot.forEach(function (doc) {
+        results.push(doc.data());
+      });
+      return results;
+    } catch (e) {
+      console.log("Error getting comments: ", e);
+    }
+  },
+  createNewComment: async (commentData) => {
+    return await firebase
+      .firestore()
+      .collection("comments")
+      .add(commentData)
+      .then(function (docRef) {
+        firebase
+          .firestore()
+          .collection("comments")
+          .doc(docRef.id)
+          .update({ commentid: docRef.id });
+      })
+      .catch(function (error) {
+        console.error("Error adding document: ", error);
+      });
+  },
+  deleteComment: async (commentid) => {
+    return await firebase
+      .firestore()
+      .collection("comments")
+      .doc(commentid)
+      .delete();
   },
   checkComment: async (user, movieID) => {
     const query = firebase

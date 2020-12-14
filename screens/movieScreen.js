@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import { Dimensions } from "react-native";
 import { StyleSheet, Text, View, Image } from "react-native";
 import {
@@ -34,6 +34,7 @@ function movieScreen({ route, navigation, firebase }) {
       cantWrite: cantWrite,
       userInfo: user,
       comments: comments,
+      movieTitle: selected.Title,
     });
   };
 
