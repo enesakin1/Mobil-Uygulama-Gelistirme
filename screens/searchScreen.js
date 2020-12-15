@@ -1,5 +1,5 @@
 import { StatusBar } from "expo-status-bar";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   StyleSheet,
   View,
@@ -13,8 +13,10 @@ import { Input, Text } from "react-native-elements";
 import { Ionicons } from "@expo/vector-icons";
 import axios from "react-native-axios";
 import { ScrollView } from "react-native-gesture-handler";
+import UserPermissions from "../utilities/UserPermissions";
+import Constants from "expo-constants";
 
-function searchScreen({ navigation }) {
+function searchScreen({ navigation, firebase }) {
   const apiurl = "http://www.omdbapi.com/?apikey=9311d6bd";
   const [state, setState] = useState({
     searchText: "",
@@ -30,6 +32,15 @@ function searchScreen({ navigation }) {
       });
     });
   };
+  const setToken = async () => {
+    const expoToken = await UserPermissions.registerForPushNotificationsAsync();
+    if (expoToken) {
+      firebase.setExpoToken(expoToken);
+    }
+  };
+  useEffect(() => {
+    setToken();
+  }, []);
 
   const search = async () => {
     Keyboard.dismiss();
@@ -147,4 +158,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default searchScreen;
+export default withFirebaseHOC(searchScreen);

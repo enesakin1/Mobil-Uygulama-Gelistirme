@@ -8,12 +8,16 @@ import {
   ImageBackground,
   TouchableOpacity,
   Alert,
+  Dimensions,
 } from "react-native";
 import { withFirebaseHOC } from "../config/Firebase";
 import UserPermissions from "../utilities/UserPermissions";
 import * as ImagePicker from "expo-image-picker";
 import { Ionicons } from "@expo/vector-icons";
 import LoadingScreen from "./loadingScreen";
+
+const { width, height } = Dimensions.get("window");
+const { aspectRatio } = width / height;
 
 class profileScreen extends Component {
   state = {
@@ -215,13 +219,13 @@ const styles = StyleSheet.create({
   },
   comment: {
     fontSize: 13,
-    marginLeft: 10,
   },
   commentDate: {
     fontSize: 13,
   },
   commentTitle: {
     fontSize: 16,
+    marginLeft: 5,
     fontWeight: "bold",
   },
   commentDateContainer: {

@@ -59,6 +59,88 @@ const Firebase = {
       );
     });
   },
+  createVote: async (voteData, commentid) => {
+    let query = firebase.firestore().collection("comments").doc(commentid);
+    let useruid, movieTitle, expoToken;
+    try {
+      let querySnapshot = await query.get();
+      useruid = querySnapshot.data().useruid;
+      movieTitle = querySnapshot.data().movieTitle;
+    } catch (e) {}
+    query = firebase.firestore().collection("users").doc(useruid);
+    try {
+      let querySnapshot = await query.get();
+      expoToken = querySnapshot.data().expoToken;
+    } catch (e) {}
+
+    await firebase
+      .firestore()
+      .collection("votes")
+      .add(voteData)
+      .then(function (docRef) {
+        firebase
+          .firestore()
+          .collection("votes")
+          .doc(docRef.id)
+          .update({ voteid: docRef.id });
+      })
+      .catch(function (error) {
+        console.error("Error adding document: ", error);
+      });
+    return [expoToken, movieTitle];
+  },
+  sendPushNotification: async (notificationData) => {
+    const message = {
+      to: notificationData[0],
+      sound: "default",
+      title: notificationData[1],
+      body: "Someone liked your comment!",
+    };
+
+    await fetch("https://exp.host/--/api/v2/push/send", {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Accept-encoding": "gzip, deflate",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(message),
+    });
+  },
+  deleteVote: async (commentid, useruid) => {
+    const query = firebase
+      .firestore()
+      .collection("votes")
+      .where("commentid", "==", commentid)
+      .where("voteuseruid", "==", useruid);
+    try {
+      const querySnapshot = await query.get();
+      const voteid = querySnapshot.docs[0].data().voteid;
+      return await firebase
+        .firestore()
+        .collection("votes")
+        .doc(voteid)
+        .delete();
+    } catch (e) {
+      console.log(e);
+    }
+  },
+  getAllVotes: async (movieID) => {
+    let query = firebase
+      .firestore()
+      .collection("votes")
+      .where("ID", "==", movieID);
+    try {
+      const results = [];
+      let querySnapshot = await query.get();
+      querySnapshot.forEach(function (doc) {
+        results.push(doc.data());
+      });
+      return results;
+    } catch (e) {
+      console.log("Error getting user: ", e);
+    }
+  },
   getUsername: async (useruid) => {
     const query = firebase.firestore().collection("users").doc(useruid);
     try {
@@ -76,6 +158,14 @@ const Firebase = {
         .child(useruid)
         .getDownloadURL();
     }
+  },
+  setExpoToken: async (expoToken) => {
+    const useruid = await firebase.auth().currentUser.uid;
+    return await firebase
+      .firestore()
+      .collection("users")
+      .doc(useruid)
+      .update({ expoToken: expoToken });
   },
   getUserComments: async (useruid) => {
     let query = firebase

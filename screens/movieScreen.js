@@ -32,8 +32,6 @@ function movieScreen({ route, navigation, firebase }) {
     navigation.navigate("Comments", {
       ID: movieID,
       cantWrite: cantWrite,
-      userInfo: user,
-      comments: comments,
       movieTitle: selected.Title,
     });
   };

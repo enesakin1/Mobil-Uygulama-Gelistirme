@@ -2,43 +2,99 @@ import React, { useState, useEffect } from "react";
 import { StyleSheet, View, ImageBackground, FlatList } from "react-native";
 import { withFirebaseHOC } from "../config/Firebase";
 import { Input, Text, Button } from "react-native-elements";
-import LoadingScreen from "./loadingScreen";
-
-const Item = ({ comment }) => (
-  <View style={styles.item}>
-    <Text style={styles.comment}>{comment}</Text>
-  </View>
-);
+import { Ionicons } from "@expo/vector-icons";
 
 function commentsScreen({ route, firebase }) {
   const { ID, cantWrite, movieTitle } = route.params;
-
   const [state, setState] = useState({
     commentText: "",
     error: "",
     pressedSubmit: false,
     comments: {},
+    useruid: "",
   });
-  const showComments = async () => {
-    setState({ comments: await firebase.getAllComments(ID) });
+
+  const showCommentsVotes = async () => {
+    const comments = await firebase.getAllComments(ID);
+    const votes = await firebase.getAllVotes(ID);
+    const useruid = await firebase.getUser().uid;
+
+    for (let i = 0; i < comments.length; i++) {
+      comments[i].votecount = 0;
+      comments[i].voteowner = false;
+      for (let j = 0; j < votes.length; j++) {
+        if (comments[i].commentid == votes[j].commentid) {
+          comments[i].votecount++;
+          if (votes[j].voteuseruid == useruid) {
+            comments[i].voteowner = true;
+          }
+        }
+      }
+    }
+    setState((prevState) => ({
+      ...prevState,
+      comments: comments,
+    }));
   };
   useEffect(() => {
-    showComments();
+    showCommentsVotes();
   }, []);
-  const renderItem = ({ item }) => <Item comment={item.comment} />;
+
+  const renderItem = ({ item }) => (
+    <View style={styles.item}>
+      <View style={styles.commentTitleContainer}>
+        <Text style={styles.commentTitle}>{item.username}</Text>
+        <View style={{ flexDirection: "row" }}>
+          <Text style={{ marginRight: 7 }}>{item.votecount}</Text>
+          <Ionicons
+            name={item.voteowner ? "ios-heart" : "ios-heart-empty"}
+            size={22}
+            color="#08324d"
+            onPress={async () =>
+              item.voteowner
+                ? await deleteVote(item.commentid)
+                : await submitVote(item.commentid)
+            }
+          />
+        </View>
+      </View>
+      <View style={styles.commentContainer}>
+        <Text style={styles.comment}>{item.comment}</Text>
+      </View>
+      <View style={styles.commentDateContainer}>
+        <Text style={styles.commentDate}>{item.currentDate}</Text>
+      </View>
+    </View>
+  );
+  const submitVote = async (commentid) => {
+    const voteid = "";
+    const voteuseruid = await firebase.getUser().uid;
+    const voteData = { voteid, commentid, voteuseruid, ID };
+    const notificationData = await firebase.createVote(voteData, commentid);
+    if (notificationData[0]) {
+      await firebase.sendPushNotification(notificationData);
+    }
+    showCommentsVotes();
+  };
+  const deleteVote = async (commentid) => {
+    const voteuseruid = await firebase.getUser().uid;
+    await firebase.deleteVote(commentid, voteuseruid);
+    showCommentsVotes();
+  };
   const submitComment = async () => {
     const comment = state.commentText;
     if (comment.length < 40) {
       setState((prevState) => ({
-        commentText: prevState.commentText,
+        ...prevState,
         error: "Minimum 40 characters",
-        comments: prevState.comments,
       }));
       return;
     }
-    setState(() => ({
+    setState((prevState) => ({
+      ...prevState,
       error: "",
       pressedSubmit: true,
+      commentText: "",
     }));
     var date = new Date().getDate();
     var month = new Date().getMonth() + 1;
@@ -50,6 +106,7 @@ function commentsScreen({ route, firebase }) {
       date + "/" + month + "/" + year + " " + hours + ":" + min + ":" + sec;
     try {
       const user = await firebase.getUser();
+      const username = await firebase.getUsername(user.uid);
       if (user.uid) {
         const useruid = user.uid;
         let commentid = "";
@@ -60,9 +117,10 @@ function commentsScreen({ route, firebase }) {
           currentDate,
           movieTitle,
           commentid,
+          username,
         };
         await firebase.createNewComment(userData);
-        showComments();
+        showCommentsVotes();
       }
     } catch (error) {
       console.log(error);
@@ -117,7 +175,7 @@ function commentsScreen({ route, firebase }) {
         <FlatList
           data={state.comments}
           renderItem={renderItem}
-          keyExtractor={(item) => item.useruid}
+          keyExtractor={(item) => item.commentid}
           style={{ flex: 1 }}
         ></FlatList>
       </ImageBackground>
@@ -158,5 +216,26 @@ const styles = StyleSheet.create({
   },
   comment: {
     fontSize: 13,
+  },
+  commentDate: {
+    fontSize: 13,
+  },
+  commentTitle: {
+    fontSize: 16,
+    marginLeft: 5,
+    fontWeight: "bold",
+  },
+  commentDateContainer: {
+    marginTop: 5,
+    alignItems: "flex-end",
+    justifyContent: "flex-end",
+  },
+  commentContainer: {
+    justifyContent: "center",
+    marginTop: 5,
+  },
+  commentTitleContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
   },
 });
