@@ -3,7 +3,6 @@ import { StyleSheet, View, ImageBackground, FlatList } from "react-native";
 import { withFirebaseHOC } from "../config/Firebase";
 import { Input, Text, Button } from "react-native-elements";
 import { Ionicons } from "@expo/vector-icons";
-import LoadingScreen from "./loadingScreen";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 function commentsScreen({ route, firebase }) {
@@ -14,17 +13,22 @@ function commentsScreen({ route, firebase }) {
     pressedSubmit: false,
     comments: {},
     useruid: "",
-    loaded: false,
   });
 
   const showCommentsVotes = async () => {
+    const value = await AsyncStorage.getItem("useruid");
     const comments = await firebase.getAllComments(ID);
     const votes = await firebase.getAllVotes(ID);
+    if (!state.useruid) {
+      if (value !== null) {
+        setState({ useruid: value });
+      }
+    }
 
     for (let i = 0; i < comments.length; i++) {
       comments[i].votecount = 0;
       comments[i].voteowner = false;
-      if (comments[i].useruid == state.useruid) {
+      if (comments[i].useruid == value) {
         setState((prevState) => ({
           ...prevState,
           pressedSubmit: true,
@@ -34,7 +38,7 @@ function commentsScreen({ route, firebase }) {
         if (comments[i].commentid == votes[j].commentid) {
           comments[i].votecount++;
 
-          if (votes[j].voteuseruid == state.useruid) {
+          if (votes[j].voteuseruid == value) {
             comments[i].voteowner = true;
           }
         }
@@ -46,22 +50,8 @@ function commentsScreen({ route, firebase }) {
     }));
   };
   useEffect(() => {
-    initial();
+    showCommentsVotes();
   }, []);
-
-  const initial = async () => {
-    try {
-      const value = await AsyncStorage.getItem("useruid");
-      if (value !== null) {
-        setState({ useruid: value });
-      }
-    } catch (error) {}
-    await showCommentsVotes();
-    setState((prevState) => ({
-      ...prevState,
-      loaded: true,
-    }));
-  };
 
   const renderItem = ({ item }) => (
     <View style={styles.item}>
@@ -107,7 +97,10 @@ function commentsScreen({ route, firebase }) {
   };
   const submitComment = async () => {
     const comment = state.commentText;
-    if (comment.length < 40) {
+    if (!state.commentText) {
+      return;
+    }
+    if (state.commentText.length < 40) {
       setState((prevState) => ({
         ...prevState,
         error: "Minimum 40 characters",
@@ -151,7 +144,7 @@ function commentsScreen({ route, firebase }) {
     }
   };
 
-  return state.loaded == true ? (
+  return (
     <View style={styles.container}>
       <ImageBackground
         source={require("../assets/comment.jpg")}
@@ -203,8 +196,6 @@ function commentsScreen({ route, firebase }) {
         ></FlatList>
       </ImageBackground>
     </View>
-  ) : (
-    <LoadingScreen />
   );
 }
 

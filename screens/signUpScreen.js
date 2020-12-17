@@ -64,9 +64,8 @@ class signUpScreen extends React.Component {
         this.props.navigation.navigate("App");
       }
     } catch (error) {
-      alert("You have already signed up with this e-mail");
-    } finally {
       actions.setSubmitting(false);
+      alert("You have already signed up with this e-mail");
     }
   };
   render() {
