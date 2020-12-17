@@ -3,29 +3,38 @@ import { StyleSheet, View, ImageBackground, FlatList } from "react-native";
 import { withFirebaseHOC } from "../config/Firebase";
 import { Input, Text, Button } from "react-native-elements";
 import { Ionicons } from "@expo/vector-icons";
+import LoadingScreen from "./loadingScreen";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 function commentsScreen({ route, firebase }) {
-  const { ID, cantWrite, movieTitle } = route.params;
+  const { ID, movieTitle } = route.params;
   const [state, setState] = useState({
     commentText: "",
     error: "",
     pressedSubmit: false,
     comments: {},
     useruid: "",
+    loaded: false,
   });
 
   const showCommentsVotes = async () => {
     const comments = await firebase.getAllComments(ID);
     const votes = await firebase.getAllVotes(ID);
-    const useruid = await firebase.getUser().uid;
 
     for (let i = 0; i < comments.length; i++) {
       comments[i].votecount = 0;
       comments[i].voteowner = false;
+      if (comments[i].useruid == state.useruid) {
+        setState((prevState) => ({
+          ...prevState,
+          pressedSubmit: true,
+        }));
+      }
       for (let j = 0; j < votes.length; j++) {
         if (comments[i].commentid == votes[j].commentid) {
           comments[i].votecount++;
-          if (votes[j].voteuseruid == useruid) {
+
+          if (votes[j].voteuseruid == state.useruid) {
             comments[i].voteowner = true;
           }
         }
@@ -37,8 +46,22 @@ function commentsScreen({ route, firebase }) {
     }));
   };
   useEffect(() => {
-    showCommentsVotes();
+    initial();
   }, []);
+
+  const initial = async () => {
+    try {
+      const value = await AsyncStorage.getItem("useruid");
+      if (value !== null) {
+        setState({ useruid: value });
+      }
+    } catch (error) {}
+    await showCommentsVotes();
+    setState((prevState) => ({
+      ...prevState,
+      loaded: true,
+    }));
+  };
 
   const renderItem = ({ item }) => (
     <View style={styles.item}>
@@ -50,11 +73,12 @@ function commentsScreen({ route, firebase }) {
             name={item.voteowner ? "ios-heart" : "ios-heart-empty"}
             size={22}
             color="#08324d"
-            onPress={async () =>
-              item.voteowner
-                ? await deleteVote(item.commentid)
-                : await submitVote(item.commentid)
-            }
+            onPress={async () => {
+              if (item.useruid != state.useruid)
+                item.voteowner
+                  ? await deleteVote(item.commentid)
+                  : await submitVote(item.commentid);
+            }}
           />
         </View>
       </View>
@@ -105,10 +129,9 @@ function commentsScreen({ route, firebase }) {
     let currentDate =
       date + "/" + month + "/" + year + " " + hours + ":" + min + ":" + sec;
     try {
-      const user = await firebase.getUser();
-      const username = await firebase.getUsername(user.uid);
-      if (user.uid) {
-        const useruid = user.uid;
+      const username = await firebase.getUsername(state.useruid);
+      if (state.useruid) {
+        const useruid = state.useruid;
         let commentid = "";
         const userData = {
           comment,
@@ -128,7 +151,7 @@ function commentsScreen({ route, firebase }) {
     }
   };
 
-  return (
+  return state.loaded == true ? (
     <View style={styles.container}>
       <ImageBackground
         source={require("../assets/comment.jpg")}
@@ -169,7 +192,7 @@ function commentsScreen({ route, firebase }) {
             title="Publish"
             buttonColor="#039BE5"
             onPress={submitComment}
-            disabled={cantWrite || state.pressedSubmit}
+            disabled={state.pressedSubmit}
           />
         </View>
         <FlatList
@@ -180,6 +203,8 @@ function commentsScreen({ route, firebase }) {
         ></FlatList>
       </ImageBackground>
     </View>
+  ) : (
+    <LoadingScreen />
   );
 }
 

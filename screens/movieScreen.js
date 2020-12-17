@@ -14,7 +14,7 @@ import { withFirebaseHOC } from "../config/Firebase";
 
 const { width, height } = Dimensions.get("window");
 
-function movieScreen({ route, navigation, firebase }) {
+function movieScreen({ route, navigation }) {
   let [fontsLoaded] = useFonts({
     Inter_600SemiBold,
     Inter_400Regular,
@@ -22,16 +22,8 @@ function movieScreen({ route, navigation, firebase }) {
   });
   const { selected, movieID } = route.params;
   const showComments = async () => {
-    let cantWrite = false;
-    const user = await firebase.getUser();
-    const response = await firebase.checkComment(user, movieID);
-    const comments = await firebase.getAllComments(movieID);
-    if (response) {
-      cantWrite = true;
-    }
     navigation.navigate("Comments", {
       ID: movieID,
-      cantWrite: cantWrite,
       movieTitle: selected.Title,
     });
   };
@@ -94,13 +86,11 @@ function movieScreen({ route, navigation, firebase }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  topContainer: { height: (height - 100) / 2, width },
+  topContainer: { height: (height - 200) / 2, width },
   image: {
     width,
     height,
     position: "absolute",
-    top: 0,
-    left: 0,
     zIndex: 5,
   },
   bottomContainer: {
@@ -109,7 +99,7 @@ const styles = StyleSheet.create({
     position: "relative",
     zIndex: 10,
   },
-  flexRow: { flexDirection: "row", backgroundColor: "black" },
+  flexRow: { flexDirection: "row", backgroundColor: "black", flexWrap: "wrap" },
   textWhite: { color: "#ffffff", backgroundColor: "black" },
   genres: {
     marginLeft: 10,
@@ -133,7 +123,7 @@ const styles = StyleSheet.create({
   },
   desc: { marginTop: 10, fontFamily: "Inter_400Regular" },
   title: {
-    fontSize: 28,
+    fontSize: 26,
     textTransform: "uppercase",
     lineHeight: 56,
     marginVertical: 20,

@@ -1,6 +1,6 @@
 import { Formik } from "formik";
 import * as Yup from "yup";
-import React, { Fragment, Component } from "react";
+import React, { Fragment } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import {
   StyleSheet,
@@ -27,7 +27,7 @@ const validationSchema = Yup.object().shape({
     .required()
     .min(6, "Password must have at least 6 characters "),
 });
-
+const { width, height } = Dimensions.get("window");
 class loginScreen extends React.Component {
   state = {
     passwordVisibility: true,
@@ -54,9 +54,8 @@ class loginScreen extends React.Component {
         this.props.navigation.navigate("App");
       }
     } catch (error) {
-      alert("Seems like there is no account like that. Try something else.");
-    } finally {
       actions.setSubmitting(false);
+      alert("Seems like there is no account like that. Try something else.");
     }
   };
   render() {
@@ -152,6 +151,7 @@ class loginScreen extends React.Component {
                         onPress={this.goToSignup}
                         titleStyle={{
                           color: "#F57C00",
+                          backgroundColor: "white",
                         }}
                         type="clear"
                       />
@@ -173,12 +173,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   logoContainer: {
-    flex: 1.7,
+    flex: 0.7,
     marginTop: 5,
   },
   buttonContainer: {
     margin: 25,
-    flex: 1,
+    flex: 0.4,
     marginLeft: "10%",
     marginRight: "10%",
   },
@@ -186,9 +186,10 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   textView: {
-    flex: 1,
+    flex: 0.4,
     marginLeft: "16%",
     marginRight: "16%",
+    justifyContent: "center",
   },
   logo: {
     alignSelf: "center",
@@ -198,8 +199,8 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   backgroundImage: {
-    width: Dimensions.get("window").width,
-    height: Dimensions.get("window").height,
+    width: width,
+    height: height,
     flex: 1,
   },
   icons: {

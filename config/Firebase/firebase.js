@@ -200,6 +200,22 @@ const Firebase = {
       });
   },
   deleteComment: async (commentid) => {
+    let query = firebase
+      .firestore()
+      .collection("votes")
+      .where("commentid", "==", commentid);
+    try {
+      let querySnapshot = await query.get();
+      querySnapshot.forEach(async (doc) => {
+        await firebase
+          .firestore()
+          .collection("votes")
+          .doc(doc.data().voteid)
+          .delete();
+      });
+    } catch (e) {
+      console.log("Error getting comments: ", e);
+    }
     return await firebase
       .firestore()
       .collection("comments")

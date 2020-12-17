@@ -1,5 +1,5 @@
 import { StatusBar } from "expo-status-bar";
-import React, { useState, useEffect } from "react";
+import React, { Component } from "react";
 import {
   StyleSheet,
   View,
@@ -7,120 +7,148 @@ import {
   Image,
   ImageBackground,
   TouchableHighlight,
+  ScrollView,
 } from "react-native";
 import { withFirebaseHOC } from "../config/Firebase";
 import { Input, Text } from "react-native-elements";
 import { Ionicons } from "@expo/vector-icons";
 import axios from "react-native-axios";
-import { ScrollView } from "react-native-gesture-handler";
 import UserPermissions from "../utilities/UserPermissions";
-import Constants from "expo-constants";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import LoadingScreen from "./loadingScreen";
 
-function searchScreen({ navigation, firebase }) {
-  const apiurl = "http://www.omdbapi.com/?apikey=9311d6bd";
-  const [state, setState] = useState({
-    searchText: "",
-    results: [],
-  });
+class searchScreen extends Component {
+  apiurl = "http://www.omdbapi.com/?apikey=9311d6bd";
+  _isMounted = false;
+  constructor(props) {
+    super(props);
+    this.state = {
+      searchText: "",
+      results: [],
+      isLoading: true,
+    };
+  }
 
-  const showMovie = async (imdbID) => {
-    await axios(apiurl + "&i=" + imdbID).then(({ data }) => {
+  showMovie = async (imdbID) => {
+    await axios(this.apiurl + "&i=" + imdbID).then(({ data }) => {
       let result = data;
-      navigation.navigate("Movie", {
+      this.props.navigation.navigate("Movie", {
         selected: result,
         movieID: imdbID,
       });
     });
   };
-  const setToken = async () => {
+  componentDidMount() {
+    this._isMounted = true;
+    this.initial();
+  }
+  componentWillUnmount() {
+    this._isMounted = false;
+  }
+
+  initial = async () => {
+    const user = await this.props.firebase.getUser(user);
+
+    try {
+      await AsyncStorage.setItem("useruid", user.uid);
+    } catch (error) {
+      console.log(error);
+    }
     const expoToken = await UserPermissions.registerForPushNotificationsAsync();
     if (expoToken) {
-      firebase.setExpoToken(expoToken);
+      this.props.firebase.setExpoToken(expoToken);
+    }
+    if (this._isMounted) {
+      this.setState({ isLoading: false });
     }
   };
-  useEffect(() => {
-    setToken();
-  }, []);
-
-  const search = async () => {
+  search = async () => {
     Keyboard.dismiss();
-    await axios(apiurl + "&s=" + state.searchText).then(({ data }) => {
-      let results = data.Search;
-      setState((prevState) => {
-        return { ...prevState, results: results };
-      });
-    });
+    await axios(this.apiurl + "&s=" + this.state.searchText).then(
+      ({ data }) => {
+        let results = data.Search;
+        if (this._isMounted) {
+          this.setState((prevState) => {
+            return { ...prevState, results: results };
+          });
+        }
+      }
+    );
   };
 
-  return (
-    <View style={styles.container}>
-      <ImageBackground
-        source={require("../assets/search.png")}
-        style={{ flex: 1, width: "100%" }}
-      >
-        <View style={styles.container}>
-          <Image
-            source={require("../assets/logoWithout.png")}
-            style={styles.logo}
-          />
-        </View>
-        <View style={styles.searchBox}>
-          <Input
-            name="searchInput"
-            inputContainerStyle={{
-              borderWidth: 0.8,
-              borderColor: "#06334f",
-            }}
-            placeholderTextColor="#606063"
-            style={styles.textInput}
-            value={state.searchText}
-            onChangeText={(text) =>
-              setState((prevState) => {
-                return { ...prevState, searchText: text };
-              })
-            }
-            autoCapitalize="none"
-            placeholder="Hurry! Enter a movie you want to"
-            rightIcon={
-              <Ionicons
-                name="ios-search"
-                size={24}
-                color="#08324d"
-                style={{ marginRight: 15 }}
-                onPress={search}
-              />
-            }
-            onSubmitEditing={search}
-          ></Input>
-        </View>
-        <ScrollView style={styles.results}>
-          {state.results && state.results.length
-            ? state.results.map((results) => (
-                <TouchableHighlight
-                  key={results.imdbID}
-                  onPress={() => showMovie(results.imdbID)}
-                  delayPressIn={50}
-                  underlayColor="#82dbed"
-                >
-                  <View style={styles.result}>
-                    <Image
-                      source={{ uri: results.Poster }}
-                      style={{
-                        width: "100%",
-                        height: 250,
-                        resizeMode: "contain",
-                      }}
-                    />
-                    <Text style={styles.heading}>{results.Title}</Text>
-                  </View>
-                </TouchableHighlight>
-              ))
-            : null}
-        </ScrollView>
-      </ImageBackground>
-      <StatusBar hidden={true} />
-    </View>
-  );
+  render() {
+    return this.state.isLoading ? (
+      <LoadingScreen />
+    ) : (
+      <View style={styles.container}>
+        <ImageBackground
+          source={require("../assets/search.png")}
+          style={{ flex: 1, width: "100%" }}
+        >
+          <View style={styles.container}>
+            <Image
+              source={require("../assets/logoWithout.png")}
+              style={styles.logo}
+            />
+          </View>
+          <View style={styles.searchBox}>
+            <Input
+              name="searchInput"
+              inputContainerStyle={{
+                borderWidth: 0.8,
+                borderColor: "#06334f",
+              }}
+              placeholderTextColor="#606063"
+              style={styles.textInput}
+              value={this.state.searchText}
+              onChangeText={(text) =>
+                this.setState((prevState) => {
+                  return { ...prevState, searchText: text };
+                })
+              }
+              autoCapitalize="none"
+              placeholder="Hurry! Enter a movie you want to"
+              rightIcon={
+                <Ionicons
+                  name="ios-search"
+                  size={24}
+                  color="#08324d"
+                  style={{ marginRight: 15 }}
+                  onPress={this.search}
+                />
+              }
+              onSubmitEditing={this.search}
+            ></Input>
+          </View>
+          <ScrollView style={styles.results}>
+            {this.state.results && this.state.results.length
+              ? this.state.results.map((results) => (
+                  <TouchableHighlight
+                    key={results.imdbID}
+                    onPress={() => this.showMovie(results.imdbID)}
+                    delayPressIn={50}
+                    underlayColor="#82dbed"
+                  >
+                    <View style={styles.result}>
+                      <Image
+                        source={{ uri: results.Poster }}
+                        style={{
+                          width: "100%",
+                          height: 250,
+                          resizeMode: "contain",
+                        }}
+                      />
+                      <Text style={styles.heading}>{results.Title}</Text>
+                    </View>
+                  </TouchableHighlight>
+                ))
+              : null}
+          </ScrollView>
+        </ImageBackground>
+        <StatusBar hidden={true} />
+      </View>
+    );
+  }
 }
 
 const styles = StyleSheet.create({

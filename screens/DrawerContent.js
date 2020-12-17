@@ -6,6 +6,13 @@ import { Ionicons } from "@expo/vector-icons";
 import { withFirebaseHOC } from "../config/Firebase";
 
 function DrawerContent(props) {
+  _signOut = async () => {
+    try {
+      await props.firebase.signOut();
+    } catch (error) {
+      console.log(error);
+    }
+  };
   return (
     <View style={{ flex: 1, backgroundColor: "#ECF1F4" }}>
       <DrawerContentScrollView {...props}>
@@ -49,13 +56,7 @@ function DrawerContent(props) {
             <Ionicons name="ios-exit" color={color} size={size} />
           )}
           label="Sign Out"
-          onPress={async () => {
-            try {
-              await props.firebase.signOut();
-            } catch (error) {
-              console.log(error);
-            }
-          }}
+          onPress={_signOut}
         />
       </Drawer.Section>
     </View>

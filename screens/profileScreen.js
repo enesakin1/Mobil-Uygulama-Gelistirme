@@ -1,4 +1,4 @@
-import React, { Component } from "react";
+import React, { Component, useContext } from "react";
 import {
   StyleSheet,
   Text,
@@ -8,20 +8,17 @@ import {
   ImageBackground,
   TouchableOpacity,
   Alert,
-  Dimensions,
 } from "react-native";
 import { withFirebaseHOC } from "../config/Firebase";
 import UserPermissions from "../utilities/UserPermissions";
 import * as ImagePicker from "expo-image-picker";
 import { Ionicons } from "@expo/vector-icons";
 import LoadingScreen from "./loadingScreen";
-
-const { width, height } = Dimensions.get("window");
-const { aspectRatio } = width / height;
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 class profileScreen extends Component {
   state = {
-    user: {},
+    useruid: "",
     avatar: null,
     username: "",
     comments: {},
@@ -47,7 +44,7 @@ class profileScreen extends Component {
     </View>
   );
 
-  _deleteComment = (commentid) => {
+  _deleteComment = async (commentid) => {
     Alert.alert(
       "Delete Comment",
       "Are you sure?",
@@ -71,7 +68,7 @@ class profileScreen extends Component {
   }
   getCommentsAgain = async () => {
     const comments = await this.props.firebase.getUserComments(
-      this.state.user.uid
+      this.state.useruid
     );
     this.setState({
       comments: comments,
@@ -79,12 +76,12 @@ class profileScreen extends Component {
     });
   };
   getUserInfo = async () => {
-    const user = await this.props.firebase.getUser();
-    const uri = await this.props.firebase.getPhoto(user.uid);
-    const username = await this.props.firebase.getUsername(user.uid);
-    const comments = await this.props.firebase.getUserComments(user.uid);
+    const useruid = await AsyncStorage.getItem("useruid");
+    const uri = await this.props.firebase.getPhoto(useruid);
+    const username = await this.props.firebase.getUsername(useruid);
+    const comments = await this.props.firebase.getUserComments(useruid);
     this.setState({
-      user: user,
+      useruid: useruid,
       avatar: uri,
       username: username,
       comments: comments,
@@ -101,11 +98,10 @@ class profileScreen extends Component {
     });
 
     if (!result.cancelled) {
-      this.props.firebase.setPhotoUploaded(this.state.user.uid);
       this.setState({ avatar: result.uri });
       this.props.firebase.uploadPhoto(
         this.state.avatar,
-        "avatars/" + this.state.user.uid
+        "avatars/" + this.state.useruid
       );
     }
   };
