@@ -1,4 +1,2 @@
-# Mobil-Uygulama-Gelistirme
-Mobil Uygulama Geliştirme dersi için hazırladığım film/dizi değerlendirme uygulaması.
-
-Proje için ilk uploadlanacak olan döküman "ProjeKisaBilgi.docx" olarak main directoryde bulunmaktadır.
+# NeedShortReview
+React Native based mobile app for review movies, series and shows. Used OMDb for RESTful web service to obtain content information and Firebase for Backend-as-a-Service.
