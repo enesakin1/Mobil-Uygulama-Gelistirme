@@ -117,7 +117,11 @@ class loginScreen extends React.Component {
                         autoCapitalize="none"
                         onBlur={handleBlur("password")}
                         leftIcon={
-                          <Ionicons name="ios-lock" size={24} color="orange" />
+                          <Ionicons
+                            name="ios-lock-closed"
+                            size={24}
+                            color="orange"
+                          />
                         }
                         rightIcon={
                           <TouchableOpacity

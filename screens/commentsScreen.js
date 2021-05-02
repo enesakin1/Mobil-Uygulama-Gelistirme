@@ -4,15 +4,19 @@ import { withFirebaseHOC } from "../config/Firebase";
 import { Input, Text, Button } from "react-native-elements";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import DropDownPicker from "react-native-dropdown-picker";
+import LoadingScreen from "./loadingScreen";
 
-function commentsScreen({ route, firebase }) {
+function commentsScreen({ route, firebase, navigation }) {
   const { ID, movieTitle } = route.params;
   const [state, setState] = useState({
     commentText: "",
     error: "",
     pressedSubmit: false,
-    comments: {},
+    comments: [],
     useruid: "",
+    sorting: "latest",
+    loaded: false,
   });
 
   const showCommentsVotes = async () => {
@@ -46,21 +50,44 @@ function commentsScreen({ route, firebase }) {
     }
     setState((prevState) => ({
       ...prevState,
+      loaded: true,
       comments: comments,
     }));
+    sortComments(comments);
   };
   useEffect(() => {
     showCommentsVotes();
   }, []);
-
+  useEffect(() => {
+    if (state.comments != undefined) {
+      sortComments(state.comments);
+    }
+  }, [state.sorting]);
+  const navigateProfile = async (paramuseruid) => {
+    if (paramuseruid == (await AsyncStorage.getItem("useruid"))) {
+      navigation.navigate("Profile");
+    } else {
+      navigation.navigate("Stack", {
+        screen: "OtherUserProfile",
+        params: { selectedUseruid: paramuseruid },
+      });
+    }
+  };
   const renderItem = ({ item }) => (
     <View style={styles.item}>
       <View style={styles.commentTitleContainer}>
-        <Text style={styles.commentTitle}>{item.username}</Text>
+        <Text
+          style={styles.commentTitle}
+          onPress={() => navigateProfile(item.useruid)}
+        >
+          {item.username}
+        </Text>
         <View style={{ flexDirection: "row" }}>
           <Text style={{ marginRight: 7 }}>{item.votecount}</Text>
           <Ionicons
-            name={item.voteowner ? "ios-heart" : "ios-heart-empty"}
+            name={
+              item.voteowner ? "ios-heart-dislike-outline" : "ios-heart-outline"
+            }
             size={22}
             color="#08324d"
             onPress={async () => {
@@ -84,9 +111,16 @@ function commentsScreen({ route, firebase }) {
     const voteid = "";
     const voteuseruid = await firebase.getUser().uid;
     const voteData = { voteid, commentid, voteuseruid, ID };
-    const notificationData = await firebase.createVote(voteData, commentid);
-    if (notificationData[0]) {
-      await firebase.sendPushNotification(notificationData);
+    await firebase.createVote(voteData, commentid);
+    const expoToken = await firebase.getExpoToken(voteuseruid);
+    if (expoToken.length > 0) {
+      const message = {
+        to: expoToken,
+        sound: "default",
+        title: movieTitle,
+        body: "Someone liked your comment!",
+      };
+      await firebase.sendPushNotification(message);
     }
     showCommentsVotes();
   };
@@ -94,6 +128,35 @@ function commentsScreen({ route, firebase }) {
     const voteuseruid = await firebase.getUser().uid;
     await firebase.deleteVote(commentid, voteuseruid);
     showCommentsVotes();
+  };
+  const sortComments = (comments) => {
+    if (state.sorting === "latest") {
+      comments.sort(function (a, b) {
+        var keyA = a.currentDate.replace(
+          /(\d{2})\/(\d{2})\/(\d{4})/,
+          "$2/$1/$3"
+        );
+        var keyB = b.currentDate.replace(
+          /(\d{2})\/(\d{2})\/(\d{4})/,
+          "$2/$1/$3"
+        );
+        if (keyA > keyB) return -1;
+        if (keyA < keyB) return 1;
+        return 0;
+      });
+    } else {
+      comments.sort(function (a, b) {
+        var keyA = a.votecount;
+        var keyB = b.votecount;
+        if (keyA > keyB) return -1;
+        if (keyA < keyB) return 1;
+        return 0;
+      });
+    }
+    setState((prevState) => ({
+      ...prevState,
+      comments: comments,
+    }));
   };
   const submitComment = async () => {
     const comment = state.commentText;
@@ -144,7 +207,7 @@ function commentsScreen({ route, firebase }) {
     }
   };
 
-  return (
+  return state.loaded == true ? (
     <View style={styles.container}>
       <ImageBackground
         source={require("../assets/comment.jpg")}
@@ -188,6 +251,31 @@ function commentsScreen({ route, firebase }) {
             disabled={state.pressedSubmit}
           />
         </View>
+        <View style={styles.sortingMenu}>
+          <DropDownPicker
+            items={[
+              {
+                label: "Latest",
+                value: "latest",
+              },
+              {
+                label: "Popular",
+                value: "popular",
+              },
+            ]}
+            defaultValue={state.sorting}
+            placeholder="Latest"
+            containerStyle={{ height: 40 }}
+            style={{ backgroundColor: "#fafafa" }}
+            dropDownStyle={{ backgroundColor: "#fafafa" }}
+            onChangeItem={(item) =>
+              setState((prevState) => ({
+                ...prevState,
+                sorting: item.value,
+              }))
+            }
+          />
+        </View>
         <FlatList
           data={state.comments}
           renderItem={renderItem}
@@ -196,6 +284,8 @@ function commentsScreen({ route, firebase }) {
         ></FlatList>
       </ImageBackground>
     </View>
+  ) : (
+    <LoadingScreen />
   );
 }
 
@@ -253,5 +343,11 @@ const styles = StyleSheet.create({
   commentTitleContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
+  },
+  sortingMenu: {
+    flex: 0.2,
+    width: "27%",
+    alignSelf: "flex-end",
+    marginRight: 20,
   },
 });

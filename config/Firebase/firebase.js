@@ -1,6 +1,7 @@
 import * as firebase from "firebase";
 import "firebase/auth";
 import "firebase/firestore";
+import { cos } from "react-native-reanimated";
 import firebaseConfig from "./firebaseConfig";
 
 if (!firebase.apps.length) {
@@ -60,20 +61,7 @@ const Firebase = {
     });
   },
   createVote: async (voteData, commentid) => {
-    let query = firebase.firestore().collection("comments").doc(commentid);
-    let useruid, movieTitle, expoToken;
-    try {
-      let querySnapshot = await query.get();
-      useruid = querySnapshot.data().useruid;
-      movieTitle = querySnapshot.data().movieTitle;
-    } catch (e) {}
-    query = firebase.firestore().collection("users").doc(useruid);
-    try {
-      let querySnapshot = await query.get();
-      expoToken = querySnapshot.data().expoToken;
-    } catch (e) {}
-
-    await firebase
+    return await firebase
       .firestore()
       .collection("votes")
       .add(voteData)
@@ -87,16 +75,8 @@ const Firebase = {
       .catch(function (error) {
         console.error("Error adding document: ", error);
       });
-    return [expoToken, movieTitle];
   },
-  sendPushNotification: async (notificationData) => {
-    const message = {
-      to: notificationData[0],
-      sound: "default",
-      title: notificationData[1],
-      body: "Someone liked your comment!",
-    };
-
+  sendPushNotification: async (message) => {
     await fetch("https://exp.host/--/api/v2/push/send", {
       method: "POST",
       headers: {
@@ -143,10 +123,13 @@ const Firebase = {
   },
   getUsername: async (useruid) => {
     const query = firebase.firestore().collection("users").doc(useruid);
-    try {
-      const querySnapshot = await query.get();
-      return querySnapshot.data().username;
-    } catch (e) {}
+    const querySnapshot = await query.get();
+    return querySnapshot.data().username;
+  },
+  getExpoToken: async (useruid) => {
+    const query = firebase.firestore().collection("users").doc(useruid);
+    const querySnapshot = await query.get();
+    return querySnapshot.data().expoToken;
   },
   getPhoto: async (useruid) => {
     const query = firebase.firestore().collection("users").doc(useruid);
@@ -159,8 +142,7 @@ const Firebase = {
         .getDownloadURL();
     }
   },
-  setExpoToken: async (expoToken) => {
-    const useruid = await firebase.auth().currentUser.uid;
+  setExpoToken: async (expoToken, useruid) => {
     return await firebase
       .firestore()
       .collection("users")
@@ -248,6 +230,54 @@ const Firebase = {
     } catch (e) {
       console.log("Error getting user: ", e);
     }
+  },
+  followUser: async (followData) => {
+    let id = "";
+    await firebase
+      .firestore()
+      .collection("follows")
+      .add(followData)
+      .then(function (docRef) {
+        id = docRef.id;
+        firebase
+          .firestore()
+          .collection("follows")
+          .doc(docRef.id)
+          .update({ followid: docRef.id });
+      });
+    return id;
+  },
+  unfollowUser: async (followid) => {
+    return await firebase
+      .firestore()
+      .collection("follows")
+      .doc(followid)
+      .delete();
+  },
+  getFollow: async (followData) => {
+    let query = await firebase
+      .firestore()
+      .collection("follows")
+      .where("followeduid", "==", followData.followeduid);
+    const result = [];
+    let querySnapshot = await query.get();
+    querySnapshot.forEach(function (doc) {
+      result.push(doc.data());
+    });
+    if (result.length != 0) return result[0].followid;
+    else return "notFollowing";
+  },
+  getAllFollowedUsers: async (useruid) => {
+    let query = firebase
+      .firestore()
+      .collection("follows")
+      .where("followeruid", "==", useruid);
+    const results = [];
+    let querySnapshot = await query.get();
+    querySnapshot.forEach(function (doc) {
+      results.push(doc.data());
+    });
+    return results;
   },
 };
 

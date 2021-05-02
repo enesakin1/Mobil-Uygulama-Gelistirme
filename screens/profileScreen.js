@@ -1,4 +1,4 @@
-import React, { Component, useContext } from "react";
+import React, { useState, useEffect } from "react";
 import {
   StyleSheet,
   Text,
@@ -15,24 +15,31 @@ import * as ImagePicker from "expo-image-picker";
 import { Ionicons } from "@expo/vector-icons";
 import LoadingScreen from "./loadingScreen";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import axios from "react-native-axios";
 
-class profileScreen extends Component {
-  state = {
+function profileScreen({ route, firebase, navigation }) {
+  const apiurl = "http://www.omdbapi.com/?apikey=9311d6bd";
+  const [state, setState] = useState({
     useruid: "",
     avatar: null,
     username: "",
     comments: {},
     loaded: false,
-  };
-  renderItem = ({ item }) => (
+  });
+  const renderItem = ({ item }) => (
     <View style={styles.item}>
       <View style={styles.commentTitleContainer}>
-        <Text style={styles.commentTitle}>{item.movieTitle}</Text>
+        <Text
+          onPress={() => navigateMovie(item.ID)}
+          style={styles.commentTitle}
+        >
+          {item.movieTitle}
+        </Text>
         <Ionicons
           name="ios-trash"
           size={22}
           color="#08324d"
-          onPress={async () => await this._deleteComment(item.commentid)}
+          onPress={async () => await _deleteComment(item.commentid)}
         />
       </View>
       <View style={styles.commentContainer}>
@@ -43,8 +50,14 @@ class profileScreen extends Component {
       </View>
     </View>
   );
-
-  _deleteComment = async (commentid) => {
+  const onRefresh = () => {
+    setState((prevState) => ({
+      ...prevState,
+      isFetching: true,
+    }));
+    getCommentsAgain();
+  };
+  const _deleteComment = async (commentid) => {
     Alert.alert(
       "Delete Comment",
       "Are you sure?",
@@ -55,32 +68,47 @@ class profileScreen extends Component {
         {
           text: "Yes",
           onPress: async () => {
-            await this.props.firebase.deleteComment(commentid);
-            this.getCommentsAgain();
+            await firebase.deleteComment(commentid);
+            getCommentsAgain();
           },
         },
       ],
       { cancelable: false }
     );
   };
-  componentDidMount() {
-    this.getUserInfo();
-  }
-  getCommentsAgain = async () => {
-    const comments = await this.props.firebase.getUserComments(
-      this.state.useruid
-    );
-    this.setState({
-      comments: comments,
-      isFetching: false,
+
+  useEffect(() => {
+    setState({
+      loaded: false,
+    });
+    getUserInfo();
+  }, []);
+
+  const navigateMovie = async (imdbID) => {
+    await axios(apiurl + "&i=" + imdbID).then(({ data }) => {
+      let result = data;
+      navigation.navigate("Movie", {
+        selected: result,
+        movieID: imdbID,
+      });
     });
   };
-  getUserInfo = async () => {
+
+  const getCommentsAgain = async () => {
+    const comments = await firebase.getUserComments(state.useruid);
+    setState((prevState) => ({
+      ...prevState,
+      comments: comments,
+      isFetching: false,
+    }));
+  };
+
+  const getUserInfo = async () => {
     const useruid = await AsyncStorage.getItem("useruid");
-    const uri = await this.props.firebase.getPhoto(useruid);
-    const username = await this.props.firebase.getUsername(useruid);
-    const comments = await this.props.firebase.getUserComments(useruid);
-    this.setState({
+    const uri = await firebase.getPhoto(useruid);
+    const username = await firebase.getUsername(useruid);
+    const comments = await firebase.getUserComments(useruid);
+    setState({
       useruid: useruid,
       avatar: uri,
       username: username,
@@ -89,7 +117,8 @@ class profileScreen extends Component {
       isFetching: false,
     });
   };
-  selectAvatar = async () => {
+
+  const selectAvatar = async () => {
     UserPermissions.getCameraPermission();
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
@@ -98,69 +127,59 @@ class profileScreen extends Component {
     });
 
     if (!result.cancelled) {
-      this.setState({ avatar: result.uri });
-      this.props.firebase.uploadPhoto(
-        this.state.avatar,
-        "avatars/" + this.state.useruid
-      );
+      setState((prevState) => ({ ...prevState, avatar: result.uri }));
+      firebase.uploadPhoto(state.avatar, "avatars/" + state.useruid);
+      firebase.setPhotoUploaded(state.useruid);
     }
   };
-  onRefresh() {
-    this.setState({ isFetching: true }, function () {
-      this.getCommentsAgain();
-    });
-  }
-  render() {
-    return this.state.loaded == true ? (
-      <View style={styles.container}>
-        <ImageBackground
-          source={require("../assets/profile.png")}
-          style={{ flex: 1, width: "100%" }}
+  return state.loaded == true ? (
+    <View style={styles.container}>
+      <ImageBackground
+        source={require("../assets/profile.png")}
+        style={{ flex: 1, width: "100%" }}
+      >
+        <View
+          style={{
+            alignItems: "center",
+            justifyContent: "center",
+            flex: 0.8,
+            borderBottomWidth: 1,
+          }}
         >
-          <View
-            style={{
-              alignItems: "center",
-              justifyContent: "center",
-              flex: 0.8,
-              borderBottomWidth: 1,
-            }}
-          >
-            <View style={styles.avatarContainer}>
-              <TouchableOpacity
-                style={styles.avatarPlaceholder}
-                onPress={this.selectAvatar}
-              >
-                <Image
-                  style={styles.avatar}
-                  source={
-                    this.state.avatar
-                      ? { uri: this.state.avatar }
-                      : require("../assets/tempAvatar.png")
-                  }
-                />
-              </TouchableOpacity>
-            </View>
-            <Text style={styles.name}>{this.state.username}</Text>
+          <View style={styles.avatarContainer}>
+            <TouchableOpacity
+              style={styles.avatarPlaceholder}
+              onPress={selectAvatar}
+            >
+              <Image
+                style={styles.avatar}
+                source={
+                  state.avatar
+                    ? { uri: state.avatar }
+                    : require("../assets/tempAvatar.png")
+                }
+              />
+            </TouchableOpacity>
           </View>
-          <View style={styles.titleContainer}>
-            <Text style={styles.title}>Comment History</Text>
-          </View>
-          <FlatList
-            data={this.state.comments}
-            renderItem={this.renderItem}
-            keyExtractor={(item) => item.commentid}
-            style={{ flex: 1 }}
-            refreshing={this.state.isFetching}
-            onRefresh={() => this.getCommentsAgain()}
-          ></FlatList>
-        </ImageBackground>
-      </View>
-    ) : (
-      <LoadingScreen />
-    );
-  }
+          <Text style={styles.name}>{state.username}</Text>
+        </View>
+        <View style={styles.titleContainer}>
+          <Text style={styles.title}>Comment History</Text>
+        </View>
+        <FlatList
+          data={state.comments}
+          renderItem={renderItem}
+          keyExtractor={(item) => item.commentid}
+          style={{ flex: 1 }}
+          refreshing={state.isFetching}
+          onRefresh={() => onRefresh}
+        ></FlatList>
+      </ImageBackground>
+    </View>
+  ) : (
+    <LoadingScreen />
+  );
 }
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,

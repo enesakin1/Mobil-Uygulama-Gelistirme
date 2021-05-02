@@ -74,7 +74,13 @@ function movieScreen({ route, navigation }) {
                 marginTop: 40,
                 width: "50%",
               }}
-              icon={<Ionicons name="ios-chatboxes" size={24} color="#1a2538" />}
+              icon={
+                <Ionicons
+                  name="ios-chatbox-ellipses-outline"
+                  size={24}
+                  color="#1a2538"
+                />
+              }
               onPress={showComments}
             />
           </View>

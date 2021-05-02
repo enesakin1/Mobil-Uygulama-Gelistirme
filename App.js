@@ -1,11 +1,10 @@
-import React from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import Firebase, { FirebaseProvider } from "./config/Firebase";
 import AppContainer from "./navigation/navigation";
 import { NavigationContainer } from "@react-navigation/native";
-import { YellowBox } from "react-native";
-YellowBox.ignoreWarnings(["Setting a timer"]);
-YellowBox.ignoreWarnings(["YellowBox"]);
+import { LogBox } from "react-native";
 export default function App() {
+  useEffect(() => LogBox.ignoreLogs(["Setting a timer"]), []);
   return (
     <FirebaseProvider value={Firebase}>
       <NavigationContainer>

@@ -38,7 +38,7 @@ function DrawerContent(props) {
               />
               <DrawerItem
                 icon={({ color, size }) => (
-                  <Ionicons name="ios-contact" color={color} size={size} />
+                  <Ionicons name="ios-person" color={color} size={size} />
                 )}
                 label="Profile"
                 labelStyle={{ fontSize: 16 }}

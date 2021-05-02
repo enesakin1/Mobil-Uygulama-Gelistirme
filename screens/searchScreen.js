@@ -48,15 +48,10 @@ class searchScreen extends Component {
 
   initial = async () => {
     const user = await this.props.firebase.getUser(user);
-
-    try {
-      await AsyncStorage.setItem("useruid", user.uid);
-    } catch (error) {
-      console.log(error);
-    }
+    await AsyncStorage.setItem("useruid", user.uid);
     const expoToken = await UserPermissions.registerForPushNotificationsAsync();
     if (expoToken) {
-      this.props.firebase.setExpoToken(expoToken);
+      this.props.firebase.setExpoToken(expoToken, user.uid);
     }
     if (this._isMounted) {
       this.setState({ isLoading: false });
