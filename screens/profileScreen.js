@@ -128,7 +128,7 @@ function profileScreen({ route, firebase, navigation }) {
 
     if (!result.cancelled) {
       setState((prevState) => ({ ...prevState, avatar: result.uri }));
-      firebase.uploadPhoto(state.avatar, "avatars/" + state.useruid);
+      firebase.uploadPhoto(result.uri, "avatars/" + state.useruid);
       firebase.setPhotoUploaded(state.useruid);
     }
   };

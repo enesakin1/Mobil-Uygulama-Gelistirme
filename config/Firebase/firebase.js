@@ -41,24 +41,26 @@ const Firebase = {
       .update({ photouploaded: true });
   },
   uploadPhoto: async (uri, filename) => {
-    return new Promise(async (res, rej) => {
-      const response = await fetch(uri);
-      const file = await response.blob();
-
-      let upload = firebase.storage().ref(filename).put(file);
-
-      upload.on(
-        "state_changed",
-        (snapshot) => {},
-        (err) => {
-          rej(err);
-        },
-        async () => {
-          const url = await upload.snapshot.ref.getDownloadURL();
-          res(url);
-        }
-      );
+    const blob = await new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.onload = function () {
+        resolve(xhr.response);
+      };
+      xhr.onerror = function (e) {
+        console.log(e);
+        reject(new TypeError("Network request failed"));
+      };
+      xhr.responseType = "blob";
+      xhr.open("GET", uri, true);
+      xhr.send(null);
     });
+
+    const ref = firebase.storage().ref(filename);
+    const snapshot = await ref.put(blob);
+
+    blob.close();
+
+    return await snapshot.ref.getDownloadURL();
   },
   createVote: async (voteData, commentid) => {
     return await firebase
