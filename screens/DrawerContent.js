@@ -46,6 +46,20 @@ function DrawerContent(props) {
                   props.navigation.navigate("Tab", { screen: "Profile" });
                 }}
               />
+              <DrawerItem
+                icon={({ color, size }) => (
+                  <Ionicons
+                    name="ios-chatbubbles-outline"
+                    color={color}
+                    size={size}
+                  />
+                )}
+                label="Activity"
+                labelStyle={{ fontSize: 16 }}
+                onPress={() => {
+                  props.navigation.navigate("Tab", { screen: "Activity" });
+                }}
+              />
             </Drawer.Section>
           </View>
         </View>

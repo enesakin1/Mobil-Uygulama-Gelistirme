@@ -27,6 +27,7 @@ function otherUserProfile({ route, firebase, navigation }) {
     loaded: false,
     isFollowing: false,
     followID: "",
+    numberOfFollowers: 0,
   });
   const renderItem = ({ item }) => (
     <View style={styles.item}>
@@ -43,6 +44,61 @@ function otherUserProfile({ route, firebase, navigation }) {
       </View>
       <View style={styles.commentDateContainer}>
         <Text style={styles.commentDate}>{item.currentDate}</Text>
+      </View>
+    </View>
+  );
+  const header = () => (
+    <View>
+      <View
+        style={{
+          alignItems: "center",
+          justifyContent: "center",
+          flex: 0.8,
+        }}
+      >
+        <Button
+          buttonType="outline"
+          buttonStyle={{
+            backgroundColor: "#4bab55",
+            borderRadius: 10,
+            justifyContent: "flex-end",
+            marginTop: 30,
+          }}
+          icon={
+            <Ionicons
+              name={
+                state.isFollowing
+                  ? "person-remove-outline"
+                  : "person-add-outline"
+              }
+              size={17}
+              color="white"
+            />
+          }
+          title={state.isFollowing ? "Unfollow" : "Follow"}
+          buttonColor="#039BE5"
+          titleStyle={{ marginLeft: 4 }}
+          onPress={state.isFollowing ? unfollowUser : followUser}
+        />
+        <View style={styles.avatarContainer}>
+          <View>
+            <TouchableOpacity style={styles.avatarPlaceholder}>
+              <Image
+                style={styles.avatar}
+                source={
+                  state.avatar
+                    ? { uri: state.avatar }
+                    : require("../assets/tempAvatar.png")
+                }
+              />
+            </TouchableOpacity>
+          </View>
+          <Text style={styles.name}>{state.username}</Text>
+        </View>
+        <Text>{state.numberOfFollowers + " Followers"}</Text>
+      </View>
+      <View style={styles.titleContainer}>
+        <Text style={styles.title}>Comment History</Text>
       </View>
     </View>
   );
@@ -64,6 +120,13 @@ function otherUserProfile({ route, firebase, navigation }) {
 
   const getCommentsAgain = async () => {
     const comments = await firebase.getUserComments(state.useruid);
+    await comments.sort(function (a, b) {
+      var keyA = a.currentDate.replace(/(\d{2})\/(\d{2})\/(\d{4})/, "$3/$2/$1");
+      var keyB = b.currentDate.replace(/(\d{2})\/(\d{2})\/(\d{4})/, "$3/$2/$1");
+      if (keyA > keyB) return -1;
+      if (keyA < keyB) return 1;
+      return 0;
+    });
     setState((prevState) => ({
       ...prevState,
       comments: comments,
@@ -74,8 +137,15 @@ function otherUserProfile({ route, firebase, navigation }) {
     const useruid = await selectedUseruid;
     const uri = await firebase.getPhoto(useruid);
     const username = await firebase.getUsername(useruid);
-    const comments = await firebase.getUserComments(useruid);
-
+    const numberOfFollowers = await firebase.getNumberOfFollowers(useruid);
+    var comments = await firebase.getUserComments(useruid);
+    await comments.sort(function (a, b) {
+      var keyA = a.currentDate.replace(/(\d{2})\/(\d{2})\/(\d{4})/, "$3/$2/$1");
+      var keyB = b.currentDate.replace(/(\d{2})\/(\d{2})\/(\d{4})/, "$3/$2/$1");
+      if (keyA > keyB) return -1;
+      if (keyA < keyB) return 1;
+      return 0;
+    });
     const followeruid = await AsyncStorage.getItem("useruid");
     const followeduid = selectedUseruid;
     const userData = {
@@ -98,6 +168,7 @@ function otherUserProfile({ route, firebase, navigation }) {
       isFetching: false,
       isFollowing: resultBoolean,
       followID: resultBoolean ? result : "",
+      numberOfFollowers: numberOfFollowers,
     });
   };
   const followUser = async () => {
@@ -110,10 +181,13 @@ function otherUserProfile({ route, firebase, navigation }) {
       followid,
     };
     const id = await firebase.followUser(userData);
+    const followData = { useruid: state.useruid, incordec: 1 };
+    await firebase.changeFollowerCounter(followData);
     setState((prevState) => ({
       ...prevState,
       isFollowing: true,
       followID: id,
+      numberOfFollowers: state.numberOfFollowers + 1,
     }));
     const username = await firebase.getUsername(followeruid);
     const expoToken = await firebase.getExpoToken(followeruid);
@@ -147,11 +221,14 @@ function otherUserProfile({ route, firebase, navigation }) {
         {
           text: "Yes",
           onPress: async () => {
+            const data = { useruid: state.useruid, incordec: -1 };
+            await firebase.changeFollowerCounter(data);
             await firebase.unfollowUser(state.followID);
             setState((prevState) => ({
               ...prevState,
               isFollowing: false,
               followID: "",
+              numberOfFollowers: state.numberOfFollowers - 1,
             }));
           },
         },
@@ -166,61 +243,14 @@ function otherUserProfile({ route, firebase, navigation }) {
         source={require("../assets/profile.png")}
         style={{ flex: 1, width: "100%" }}
       >
-        <View
-          style={{
-            alignItems: "center",
-            justifyContent: "center",
-            flex: 0.8,
-            borderBottomWidth: 1,
-          }}
-        >
-          <Button
-            buttonType="outline"
-            buttonStyle={{
-              backgroundColor: "#4bab55",
-              borderRadius: 10,
-              justifyContent: "flex-end",
-            }}
-            icon={
-              <Ionicons
-                name={
-                  state.isFollowing
-                    ? "person-remove-outline"
-                    : "person-add-outline"
-                }
-                size={17}
-                color="white"
-              />
-            }
-            title={state.isFollowing ? "Unfollow" : "Follow"}
-            buttonColor="#039BE5"
-            titleStyle={{ marginLeft: 4 }}
-            onPress={state.isFollowing ? unfollowUser : followUser}
-          />
-          <View style={styles.avatarContainer}>
-            <TouchableOpacity style={styles.avatarPlaceholder}>
-              <Image
-                style={styles.avatar}
-                source={
-                  state.avatar
-                    ? { uri: state.avatar }
-                    : require("../assets/tempAvatar.png")
-                }
-              />
-            </TouchableOpacity>
-          </View>
-          <Text style={styles.name}>{state.username}</Text>
-        </View>
-        <View style={styles.titleContainer}>
-          <Text style={styles.title}>Comment History</Text>
-        </View>
         <FlatList
           data={state.comments}
           renderItem={renderItem}
           keyExtractor={(item) => item.commentid}
           style={{ flex: 1 }}
           refreshing={state.isFetching}
-          onRefresh={() => onRefresh}
+          onRefresh={() => onRefresh()}
+          ListHeaderComponent={header}
         ></FlatList>
       </ImageBackground>
     </View>
@@ -245,19 +275,24 @@ const styles = StyleSheet.create({
     borderRadius: 50,
   },
   name: {
-    marginTop: 17,
-    fontSize: 16,
+    marginTop: 13,
+    fontSize: 18,
     fontWeight: "bold",
+    alignSelf: "center",
   },
   titleContainer: {
-    flex: 0.2,
+    flex: 0.3,
     borderBottomWidth: 1,
+    borderTopWidth: 1,
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 10,
+    marginTop: 10,
   },
   title: {
-    fontSize: 18,
+    marginTop: 5,
+    marginBottom: 5,
+    fontSize: 20,
   },
   comments: {
     flex: 1,
@@ -268,7 +303,7 @@ const styles = StyleSheet.create({
     height: 100,
     backgroundColor: "#E1E2E6",
     borderRadius: 50,
-    marginTop: 48,
+    marginTop: 25,
     justifyContent: "center",
     alignItems: "center",
   },

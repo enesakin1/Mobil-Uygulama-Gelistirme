@@ -59,7 +59,14 @@ class signUpScreen extends React.Component {
         const { uid } = response.user;
         const expoToken = "";
         const photouploaded = false;
-        const userData = { email, username, uid, photouploaded, expoToken };
+        const userData = {
+          email,
+          username,
+          uid,
+          photouploaded,
+          expoToken,
+          numberOfFollowers: 0,
+        };
         await this.props.firebase.createNewUser(userData);
         this.props.navigation.navigate("App");
       }

@@ -84,6 +84,7 @@ function commentsScreen({ route, firebase, navigation }) {
         </Text>
         <View style={{ flexDirection: "row" }}>
           <Text style={{ marginRight: 7 }}>{item.votecount}</Text>
+
           <Ionicons
             name={
               item.voteowner ? "ios-heart-dislike-outline" : "ios-heart-outline"
@@ -134,11 +135,11 @@ function commentsScreen({ route, firebase, navigation }) {
       comments.sort(function (a, b) {
         var keyA = a.currentDate.replace(
           /(\d{2})\/(\d{2})\/(\d{4})/,
-          "$2/$1/$3"
+          "$3/$2/$1"
         );
         var keyB = b.currentDate.replace(
           /(\d{2})\/(\d{2})\/(\d{4})/,
-          "$2/$1/$3"
+          "$3/$2/$1"
         );
         if (keyA > keyB) return -1;
         if (keyA < keyB) return 1;
@@ -178,10 +179,14 @@ function commentsScreen({ route, firebase, navigation }) {
     }));
     var date = new Date().getDate();
     var month = new Date().getMonth() + 1;
+    month = month > 9 ? month : "0" + month;
     var year = new Date().getFullYear();
     var hours = new Date().getHours();
+    hours = hours > 9 ? hours : "0" + hours;
     var min = new Date().getMinutes();
+    min = min > 9 ? min : "0" + min;
     var sec = new Date().getSeconds();
+    sec = sec > 9 ? sec : "0" + sec;
     let currentDate =
       date + "/" + month + "/" + year + " " + hours + ":" + min + ":" + sec;
     try {

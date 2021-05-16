@@ -1,5 +1,11 @@
 import React, { useState, useEffect } from "react";
-import { StyleSheet, View, ImageBackground, FlatList } from "react-native";
+import {
+  StyleSheet,
+  View,
+  ImageBackground,
+  FlatList,
+  SafeAreaView,
+} from "react-native";
 import { withFirebaseHOC } from "../config/Firebase";
 import { Text } from "react-native-elements";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -39,8 +45,8 @@ function activityScreen({ firebase, navigation }) {
       );
     }
     comments.sort(function (a, b) {
-      var keyA = a.currentDate.replace(/(\d{2})\/(\d{2})\/(\d{4})/, "$2/$1/$3");
-      var keyB = b.currentDate.replace(/(\d{2})\/(\d{2})\/(\d{4})/, "$2/$1/$3");
+      var keyA = a.currentDate.replace(/(\d{2})\/(\d{2})\/(\d{4})/, "$3/$1/$2");
+      var keyB = b.currentDate.replace(/(\d{2})\/(\d{2})\/(\d{4})/, "$3/$1/$2");
       if (keyA > keyB) return -1;
       if (keyA < keyB) return 1;
       return 0;
@@ -93,7 +99,7 @@ function activityScreen({ firebase, navigation }) {
     </View>
   );
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <ImageBackground
         source={require("../assets/search.png")}
         style={{ flex: 1, width: "100%" }}
@@ -105,10 +111,10 @@ function activityScreen({ firebase, navigation }) {
           keyExtractor={(item) => item.commentid}
           style={{ flex: 1 }}
           refreshing={state.isFetching}
-          onRefresh={() => onRefresh}
+          onRefresh={() => onRefresh()}
         ></FlatList>
       </ImageBackground>
-    </View>
+    </SafeAreaView>
   );
 }
 

@@ -25,6 +25,7 @@ function profileScreen({ route, firebase, navigation }) {
     username: "",
     comments: {},
     loaded: false,
+    numberOfFollowers: 0,
   });
   const renderItem = ({ item }) => (
     <View style={styles.item}>
@@ -47,6 +48,41 @@ function profileScreen({ route, firebase, navigation }) {
       </View>
       <View style={styles.commentDateContainer}>
         <Text style={styles.commentDate}>{item.currentDate}</Text>
+      </View>
+    </View>
+  );
+  const header = () => (
+    <View>
+      <View
+        style={{
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <View style={styles.avatarContainer}>
+          <View>
+            <View>
+              <TouchableOpacity
+                style={styles.avatarPlaceholder}
+                onPress={selectAvatar}
+              >
+                <Image
+                  style={styles.avatar}
+                  source={
+                    state.avatar
+                      ? { uri: state.avatar }
+                      : require("../assets/tempAvatar.png")
+                  }
+                />
+              </TouchableOpacity>
+            </View>
+          </View>
+          <Text style={styles.name}>{state.username}</Text>
+        </View>
+        <Text>{state.numberOfFollowers + " Followers"}</Text>
+      </View>
+      <View style={styles.titleContainer}>
+        <Text style={styles.title}>Comment History</Text>
       </View>
     </View>
   );
@@ -96,6 +132,13 @@ function profileScreen({ route, firebase, navigation }) {
 
   const getCommentsAgain = async () => {
     const comments = await firebase.getUserComments(state.useruid);
+    await comments.sort(function (a, b) {
+      var keyA = a.currentDate.replace(/(\d{2})\/(\d{2})\/(\d{4})/, "$3/$2/$1");
+      var keyB = b.currentDate.replace(/(\d{2})\/(\d{2})\/(\d{4})/, "$3/$2/$1");
+      if (keyA > keyB) return -1;
+      if (keyA < keyB) return 1;
+      return 0;
+    });
     setState((prevState) => ({
       ...prevState,
       comments: comments,
@@ -107,7 +150,15 @@ function profileScreen({ route, firebase, navigation }) {
     const useruid = await AsyncStorage.getItem("useruid");
     const uri = await firebase.getPhoto(useruid);
     const username = await firebase.getUsername(useruid);
-    const comments = await firebase.getUserComments(useruid);
+    const numberOfFollowers = await firebase.getNumberOfFollowers(useruid);
+    var comments = await firebase.getUserComments(useruid);
+    await comments.sort(function (a, b) {
+      var keyA = a.currentDate.replace(/(\d{2})\/(\d{2})\/(\d{4})/, "$3/$2/$1");
+      var keyB = b.currentDate.replace(/(\d{2})\/(\d{2})\/(\d{4})/, "$3/$2/$1");
+      if (keyA > keyB) return -1;
+      if (keyA < keyB) return 1;
+      return 0;
+    });
     setState({
       useruid: useruid,
       avatar: uri,
@@ -115,6 +166,7 @@ function profileScreen({ route, firebase, navigation }) {
       comments: comments,
       loaded: true,
       isFetching: false,
+      numberOfFollowers: numberOfFollowers,
     });
   };
 
@@ -138,41 +190,14 @@ function profileScreen({ route, firebase, navigation }) {
         source={require("../assets/profile.png")}
         style={{ flex: 1, width: "100%" }}
       >
-        <View
-          style={{
-            alignItems: "center",
-            justifyContent: "center",
-            flex: 0.8,
-            borderBottomWidth: 1,
-          }}
-        >
-          <View style={styles.avatarContainer}>
-            <TouchableOpacity
-              style={styles.avatarPlaceholder}
-              onPress={selectAvatar}
-            >
-              <Image
-                style={styles.avatar}
-                source={
-                  state.avatar
-                    ? { uri: state.avatar }
-                    : require("../assets/tempAvatar.png")
-                }
-              />
-            </TouchableOpacity>
-          </View>
-          <Text style={styles.name}>{state.username}</Text>
-        </View>
-        <View style={styles.titleContainer}>
-          <Text style={styles.title}>Comment History</Text>
-        </View>
         <FlatList
           data={state.comments}
           renderItem={renderItem}
           keyExtractor={(item) => item.commentid}
           style={{ flex: 1 }}
           refreshing={state.isFetching}
-          onRefresh={() => onRefresh}
+          onRefresh={() => onRefresh()}
+          ListHeaderComponent={header}
         ></FlatList>
       </ImageBackground>
     </View>
@@ -197,19 +222,24 @@ const styles = StyleSheet.create({
     borderRadius: 50,
   },
   name: {
-    marginTop: 17,
-    fontSize: 16,
+    marginTop: 13,
+    fontSize: 18,
     fontWeight: "bold",
+    alignSelf: "center",
   },
   titleContainer: {
-    flex: 0.2,
+    flex: 0.3,
     borderBottomWidth: 1,
+    borderTopWidth: 1,
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 10,
+    marginTop: 10,
   },
   title: {
-    fontSize: 18,
+    marginTop: 5,
+    marginBottom: 5,
+    fontSize: 20,
   },
   comments: {
     flex: 1,
@@ -242,6 +272,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     marginLeft: 5,
     fontWeight: "bold",
+    flex: 0.95,
   },
   commentDateContainer: {
     marginTop: 5,

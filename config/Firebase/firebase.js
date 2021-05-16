@@ -144,6 +144,11 @@ const Firebase = {
         .getDownloadURL();
     }
   },
+  getNumberOfFollowers: async (useruid) => {
+    const query = firebase.firestore().collection("users").doc(useruid);
+    const querySnapshot = await query.get();
+    return querySnapshot.data().numberOfFollowers;
+  },
   setExpoToken: async (expoToken, useruid) => {
     return await firebase
       .firestore()
@@ -255,6 +260,17 @@ const Firebase = {
       .collection("follows")
       .doc(followid)
       .delete();
+  },
+  changeFollowerCounter: async (data) => {
+    return await firebase
+      .firestore()
+      .collection("users")
+      .doc(data.useruid)
+      .update({
+        numberOfFollowers: firebase.firestore.FieldValue.increment(
+          data.incordec
+        ),
+      });
   },
   getFollow: async (followData) => {
     let query = await firebase
