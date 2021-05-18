@@ -82,7 +82,7 @@ function otherUserProfile({ route, firebase, navigation }) {
         />
         <View style={styles.avatarContainer}>
           <View>
-            <TouchableOpacity style={styles.avatarPlaceholder}>
+            <View style={styles.avatarPlaceholder}>
               <Image
                 style={styles.avatar}
                 source={
@@ -91,23 +91,42 @@ function otherUserProfile({ route, firebase, navigation }) {
                     : require("../assets/tempAvatar.png")
                 }
               />
-            </TouchableOpacity>
+            </View>
           </View>
           <Text style={styles.name}>{state.username}</Text>
         </View>
-        <Text>{state.numberOfFollowers + " Followers"}</Text>
+        <Text>{state.numberOfFollowers + " Follower(s)"}</Text>
       </View>
       <View style={styles.titleContainer}>
         <Text style={styles.title}>Comment History</Text>
       </View>
     </View>
   );
+  const showEmptyListView = () => (
+    <View
+      style={{
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
+      <Text
+        style={{
+          fontWeight: "bold",
+          marginTop: 15,
+        }}
+      >
+        Seems like this user don't like to share opinions :(
+      </Text>
+    </View>
+  );
   const onRefresh = () => {
     setState((prevState) => ({
       ...prevState,
+      loaded: false,
       isFetching: true,
     }));
-    getCommentsAgain();
+    let useruid = state.useruid;
+    getCommentsAgain(useruid);
   };
 
   useEffect(() => {
@@ -118,8 +137,8 @@ function otherUserProfile({ route, firebase, navigation }) {
     getUserInfo();
   }, []);
 
-  const getCommentsAgain = async () => {
-    const comments = await firebase.getUserComments(state.useruid);
+  const getCommentsAgain = async (useruid) => {
+    const comments = await firebase.getUserComments(useruid);
     await comments.sort(function (a, b) {
       var keyA = a.currentDate.replace(/(\d{2})\/(\d{2})\/(\d{4})/, "$3/$2/$1");
       var keyB = b.currentDate.replace(/(\d{2})\/(\d{2})\/(\d{4})/, "$3/$2/$1");
@@ -130,6 +149,7 @@ function otherUserProfile({ route, firebase, navigation }) {
     setState((prevState) => ({
       ...prevState,
       comments: comments,
+      loaded: true,
       isFetching: false,
     }));
   };
@@ -138,14 +158,7 @@ function otherUserProfile({ route, firebase, navigation }) {
     const uri = await firebase.getPhoto(useruid);
     const username = await firebase.getUsername(useruid);
     const numberOfFollowers = await firebase.getNumberOfFollowers(useruid);
-    var comments = await firebase.getUserComments(useruid);
-    await comments.sort(function (a, b) {
-      var keyA = a.currentDate.replace(/(\d{2})\/(\d{2})\/(\d{4})/, "$3/$2/$1");
-      var keyB = b.currentDate.replace(/(\d{2})\/(\d{2})\/(\d{4})/, "$3/$2/$1");
-      if (keyA > keyB) return -1;
-      if (keyA < keyB) return 1;
-      return 0;
-    });
+    getCommentsAgain(useruid);
     const followeruid = await AsyncStorage.getItem("useruid");
     const followeduid = selectedUseruid;
     const userData = {
@@ -159,17 +172,16 @@ function otherUserProfile({ route, firebase, navigation }) {
       resultBoolean = true;
     }
 
-    setState({
+    setState((prevState) => ({
+      ...prevState,
       useruid: useruid,
       avatar: uri,
       username: username,
-      comments: comments,
-      loaded: true,
       isFetching: false,
       isFollowing: resultBoolean,
       followID: resultBoolean ? result : "",
       numberOfFollowers: numberOfFollowers,
-    });
+    }));
   };
   const followUser = async () => {
     const followeruid = await AsyncStorage.getItem("useruid");
@@ -251,6 +263,7 @@ function otherUserProfile({ route, firebase, navigation }) {
           refreshing={state.isFetching}
           onRefresh={() => onRefresh()}
           ListHeaderComponent={header}
+          ListEmptyComponent={showEmptyListView}
         ></FlatList>
       </ImageBackground>
     </View>

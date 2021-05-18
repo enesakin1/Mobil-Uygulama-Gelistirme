@@ -26,6 +26,7 @@ class searchScreen extends Component {
       searchText: "",
       results: [],
       isLoading: true,
+      notFound: false,
     };
   }
 
@@ -58,10 +59,23 @@ class searchScreen extends Component {
     }
   };
   search = async () => {
+    if (!this.state.searchText) {
+      return;
+    }
+    this.setState((prevState) => ({
+      ...prevState,
+      notFound: false,
+    }));
     Keyboard.dismiss();
     await axios(this.apiurl + "&s=" + this.state.searchText).then(
       ({ data }) => {
         let results = data.Search;
+        if (results === undefined || results.length == 0) {
+          this.setState((prevState) => ({
+            ...prevState,
+            notFound: true,
+          }));
+        }
         if (this._isMounted) {
           this.setState((prevState) => {
             return { ...prevState, results: results };
@@ -98,7 +112,7 @@ class searchScreen extends Component {
               value={this.state.searchText}
               onChangeText={(text) =>
                 this.setState((prevState) => {
-                  return { ...prevState, searchText: text };
+                  return { ...prevState, searchText: text, notFound: false };
                 })
               }
               autoCapitalize="none"
@@ -116,28 +130,44 @@ class searchScreen extends Component {
             ></Input>
           </View>
           <ScrollView style={styles.results}>
-            {this.state.results && this.state.results.length
-              ? this.state.results.map((results) => (
-                  <TouchableHighlight
-                    key={results.imdbID}
-                    onPress={() => this.showMovie(results.imdbID)}
-                    delayPressIn={50}
-                    underlayColor="#82dbed"
-                  >
-                    <View style={styles.result}>
-                      <Image
-                        source={{ uri: results.Poster }}
-                        style={{
-                          width: "100%",
-                          height: 250,
-                          resizeMode: "contain",
-                        }}
-                      />
-                      <Text style={styles.heading}>{results.Title}</Text>
-                    </View>
-                  </TouchableHighlight>
-                ))
-              : null}
+            {this.state.results && this.state.results.length ? (
+              this.state.results.map((results) => (
+                <TouchableHighlight
+                  key={results.imdbID}
+                  onPress={() => this.showMovie(results.imdbID)}
+                  delayPressIn={50}
+                  underlayColor="#82dbed"
+                >
+                  <View style={styles.result}>
+                    <Image
+                      source={{ uri: results.Poster }}
+                      style={{
+                        width: "100%",
+                        height: 250,
+                        resizeMode: "contain",
+                      }}
+                    />
+                    <Text style={styles.heading}>{results.Title}</Text>
+                  </View>
+                </TouchableHighlight>
+              ))
+            ) : this.state.notFound ? (
+              <View
+                style={{
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <Text
+                  style={{
+                    fontWeight: "bold",
+                    marginTop: 15,
+                  }}
+                >
+                  I couldn't find any result :/
+                </Text>
+              </View>
+            ) : null}
           </ScrollView>
         </ImageBackground>
         <StatusBar hidden={true} />

@@ -17,7 +17,6 @@ function activityScreen({ firebase, navigation }) {
     comments: {},
     isFetching: false,
   });
-
   useEffect(() => {
     showAllActivies();
   }, []);
@@ -98,6 +97,7 @@ function activityScreen({ firebase, navigation }) {
       </View>
     </View>
   );
+
   return (
     <SafeAreaView style={styles.container}>
       <ImageBackground

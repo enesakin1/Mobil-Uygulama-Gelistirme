@@ -17,7 +17,15 @@ function commentsScreen({ route, firebase, navigation }) {
     useruid: "",
     sorting: "latest",
     loaded: false,
+    isFetching: false,
   });
+  const onRefresh = () => {
+    setState((prevState) => ({
+      ...prevState,
+      isFetching: true,
+    }));
+    showCommentsVotes();
+  };
 
   const showCommentsVotes = async () => {
     const value = await AsyncStorage.getItem("useruid");
@@ -52,6 +60,7 @@ function commentsScreen({ route, firebase, navigation }) {
       ...prevState,
       loaded: true,
       comments: comments,
+      isFetching: false,
     }));
     sortComments(comments);
   };
@@ -108,7 +117,36 @@ function commentsScreen({ route, firebase, navigation }) {
       </View>
     </View>
   );
+  const showEmptyListView = () => (
+    <View
+      style={{
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
+      <Text
+        style={{
+          fontWeight: "bold",
+          marginTop: 15,
+          backgroundColor: "white",
+        }}
+      >
+        No comments yet. Share your first!
+      </Text>
+    </View>
+  );
   const submitVote = async (commentid) => {
+    let comments = [...state.comments];
+    for (var i = 0; i < comments.length; i++) {
+      if (comments[i].commentid === commentid) {
+        comments[i].voteowner = true;
+        comments[i].votecount++;
+      }
+    }
+    setState((prevState) => ({
+      ...prevState,
+      comments: comments,
+    }));
     const voteid = "";
     const voteuseruid = await firebase.getUser().uid;
     const voteData = { voteid, commentid, voteuseruid, ID };
@@ -123,12 +161,21 @@ function commentsScreen({ route, firebase, navigation }) {
       };
       await firebase.sendPushNotification(message);
     }
-    showCommentsVotes();
   };
   const deleteVote = async (commentid) => {
+    let comments = [...state.comments];
+    for (var i = 0; i < comments.length; i++) {
+      if (comments[i].commentid === commentid) {
+        comments[i].voteowner = false;
+        comments[i].votecount--;
+      }
+    }
+    setState((prevState) => ({
+      ...prevState,
+      comments: comments,
+    }));
     const voteuseruid = await firebase.getUser().uid;
     await firebase.deleteVote(commentid, voteuseruid);
-    showCommentsVotes();
   };
   const sortComments = (comments) => {
     if (state.sorting === "latest") {
@@ -250,7 +297,7 @@ function commentsScreen({ route, firebase, navigation }) {
               alignSelf: "flex-end",
               marginRight: 10,
             }}
-            title="Publish"
+            title="Share"
             buttonColor="#039BE5"
             onPress={submitComment}
             disabled={state.pressedSubmit}
@@ -286,6 +333,9 @@ function commentsScreen({ route, firebase, navigation }) {
           renderItem={renderItem}
           keyExtractor={(item) => item.commentid}
           style={{ flex: 1 }}
+          refreshing={state.isFetching}
+          onRefresh={() => onRefresh()}
+          ListEmptyComponent={showEmptyListView}
         ></FlatList>
       </ImageBackground>
     </View>

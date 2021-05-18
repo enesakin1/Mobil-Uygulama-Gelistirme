@@ -86,12 +86,31 @@ function profileScreen({ route, firebase, navigation }) {
       </View>
     </View>
   );
+  const showEmptyListView = () => (
+    <View
+      style={{
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
+      <Text
+        style={{
+          fontWeight: "bold",
+          marginTop: 15,
+        }}
+      >
+        Seems like this user don't like to share opinions :(
+      </Text>
+    </View>
+  );
   const onRefresh = () => {
     setState((prevState) => ({
       ...prevState,
+      loaded: false,
       isFetching: true,
     }));
-    getCommentsAgain();
+    let useruid = state.useruid;
+    getCommentsAgain(useruid);
   };
   const _deleteComment = async (commentid) => {
     Alert.alert(
@@ -105,7 +124,8 @@ function profileScreen({ route, firebase, navigation }) {
           text: "Yes",
           onPress: async () => {
             await firebase.deleteComment(commentid);
-            getCommentsAgain();
+            let useruid = state.useruid;
+            getCommentsAgain(useruid);
           },
         },
       ],
@@ -130,8 +150,8 @@ function profileScreen({ route, firebase, navigation }) {
     });
   };
 
-  const getCommentsAgain = async () => {
-    const comments = await firebase.getUserComments(state.useruid);
+  const getCommentsAgain = async (useruid) => {
+    const comments = await firebase.getUserComments(useruid);
     await comments.sort(function (a, b) {
       var keyA = a.currentDate.replace(/(\d{2})\/(\d{2})\/(\d{4})/, "$3/$2/$1");
       var keyB = b.currentDate.replace(/(\d{2})\/(\d{2})\/(\d{4})/, "$3/$2/$1");
@@ -142,6 +162,7 @@ function profileScreen({ route, firebase, navigation }) {
     setState((prevState) => ({
       ...prevState,
       comments: comments,
+      loaded: true,
       isFetching: false,
     }));
   };
@@ -151,23 +172,15 @@ function profileScreen({ route, firebase, navigation }) {
     const uri = await firebase.getPhoto(useruid);
     const username = await firebase.getUsername(useruid);
     const numberOfFollowers = await firebase.getNumberOfFollowers(useruid);
-    var comments = await firebase.getUserComments(useruid);
-    await comments.sort(function (a, b) {
-      var keyA = a.currentDate.replace(/(\d{2})\/(\d{2})\/(\d{4})/, "$3/$2/$1");
-      var keyB = b.currentDate.replace(/(\d{2})\/(\d{2})\/(\d{4})/, "$3/$2/$1");
-      if (keyA > keyB) return -1;
-      if (keyA < keyB) return 1;
-      return 0;
-    });
-    setState({
+    getCommentsAgain(useruid);
+    setState((prevState) => ({
+      ...prevState,
       useruid: useruid,
       avatar: uri,
       username: username,
-      comments: comments,
-      loaded: true,
       isFetching: false,
       numberOfFollowers: numberOfFollowers,
-    });
+    }));
   };
 
   const selectAvatar = async () => {
@@ -198,6 +211,7 @@ function profileScreen({ route, firebase, navigation }) {
           refreshing={state.isFetching}
           onRefresh={() => onRefresh()}
           ListHeaderComponent={header}
+          ListEmptyComponent={showEmptyListView}
         ></FlatList>
       </ImageBackground>
     </View>
